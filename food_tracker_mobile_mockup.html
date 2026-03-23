@@ -1,0 +1,368 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  .screen-wrap {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 1.5rem 0;
+  }
+  .phone {
+    width: 320px;
+    background: var(--color-background-secondary);
+    border-radius: 24px;
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .screen-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .top-bar .title { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+  .top-bar .date { font-size: 12px; color: var(--color-text-secondary); }
+
+  .macro-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .macro-card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 10px 12px;
+  }
+  .macro-card .m-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .macro-card .m-val { font-size: 20px; font-weight: 500; color: var(--color-text-primary); }
+  .macro-card .m-unit { font-size: 11px; color: var(--color-text-tertiary); }
+  .macro-card .m-sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+  .progress-bar {
+    height: 4px;
+    background: var(--color-border-tertiary);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .progress-fill { height: 100%; border-radius: 2px; }
+  .cal-fill { background: #D85A30; width: 62%; }
+  .pro-fill { background: #1D9E75; width: 48%; }
+
+  .section-head {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+  }
+
+  .food-card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 10px 12px;
+  }
+  .food-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .food-name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .food-amount { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .nutrient-pills {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+  .pill-cal { background: #FAECE7; color: #993C1D; }
+  .pill-pro { background: #E1F5EE; color: #0F6E56; }
+
+  .add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    background: var(--color-background-primary);
+    border: 0.5px dashed var(--color-border-secondary);
+    border-radius: var(--border-radius-lg);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    margin-top: 2px;
+  }
+  .plus { font-size: 16px; color: var(--color-text-secondary); line-height: 1; }
+
+  .divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); }
+
+  .ring-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 80px;
+    padding: 0 4px;
+  }
+  .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 4px; }
+  .bar-stack { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
+  .bar { width: 100%; border-radius: 3px 3px 0 0; }
+  .bar-label { font-size: 10px; color: var(--color-text-tertiary); }
+  .chart-legend { display: flex; gap: 12px; justify-content: center; margin-top: 6px; }
+  .leg-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--color-text-secondary); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .input-card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .input-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .input-field {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 14px;
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    color: var(--color-text-primary);
+  }
+  .input-field::placeholder { color: var(--color-text-tertiary); }
+  .nutrient-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .input-wrap { display: flex; flex-direction: column; }
+  .save-btn {
+    width: 100%;
+    padding: 10px;
+    background: #1D9E75;
+    color: #E1F5EE;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .highlight-note {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+    padding: 4px 0;
+  }
+  .annotation {
+    font-size: 11px;
+    color: #1D9E75;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .arrow { font-size: 13px; }
+</style>
+
+<div class="screen-wrap">
+
+  <div>
+    <p class="screen-label">1 — Dashboard</p>
+    <div class="phone">
+      <div class="top-bar">
+        <span class="title">Today</span>
+        <span class="date">Mar 20</span>
+      </div>
+
+      <div class="macro-row">
+        <div class="macro-card">
+          <div class="m-label">Calories</div>
+          <div class="m-val">1,240 <span class="m-unit">kcal</span></div>
+          <div class="m-sub">Goal: 2,000</div>
+          <div class="progress-bar"><div class="progress-fill cal-fill"></div></div>
+        </div>
+        <div class="macro-card">
+          <div class="m-label">Protein</div>
+          <div class="m-val">72 <span class="m-unit">g</span></div>
+          <div class="m-sub">Goal: 150g</div>
+          <div class="progress-bar"><div class="progress-fill pro-fill"></div></div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <p class="section-head">This week</p>
+      <div class="chart-bars">
+        <div class="bar-col">
+          <div class="bar-stack">
+            <div class="bar" style="background:#D85A30;height:52px;"></div>
+          </div>
+          <span class="bar-label">M</span>
+        </div>
+        <div class="bar-col">
+          <div class="bar-stack">
+            <div class="bar" style="background:#D85A30;height:44px;"></div>
+          </div>
+          <span class="bar-label">T</span>
+        </div>
+        <div class="bar-col">
+          <div class="bar-stack">
+            <div class="bar" style="background:#D85A30;height:60px;"></div>
+          </div>
+          <span class="bar-label">W</span>
+        </div>
+        <div class="bar-col">
+          <div class="bar-stack">
+            <div class="bar" style="background:#D85A30;height:38px;"></div>
+          </div>
+          <span class="bar-label">T</span>
+        </div>
+        <div class="bar-col">
+          <div class="bar-stack">
+            <div class="bar" style="background:#D85A30;height:47px;"></div>
+          </div>
+          <span class="bar-label">F</span>
+        </div>
+        <div class="bar-col">
+          <div class="bar-stack">
+            <div class="bar" style="background:#D85A30;height:28px;"></div>
+          </div>
+          <span class="bar-label">S</span>
+        </div>
+        <div class="bar-col">
+          <div class="bar-stack">
+            <div class="bar" style="background:#E0E0D8;height:10px;opacity:0.4;"></div>
+          </div>
+          <span class="bar-label">S</span>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#D85A30;"></div>Calories</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#1D9E75;"></div>Protein</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="screen-label">2 — Food log</p>
+    <div class="phone">
+      <div class="top-bar">
+        <span class="title">Breakfast</span>
+        <span class="date">3 items</span>
+      </div>
+
+      <div class="food-card">
+        <div class="food-row">
+          <div>
+            <div class="food-name">Oats with milk</div>
+            <div class="food-amount">1 bowl · 300g</div>
+          </div>
+        </div>
+        <div class="nutrient-pills">
+          <span class="pill pill-cal">340 kcal</span>
+          <span class="pill pill-pro">12g protein</span>
+        </div>
+      </div>
+
+      <div class="food-card">
+        <div class="food-row">
+          <div>
+            <div class="food-name">Boiled eggs</div>
+            <div class="food-amount">2 eggs · 120g</div>
+          </div>
+        </div>
+        <div class="nutrient-pills">
+          <span class="pill pill-cal">156 kcal</span>
+          <span class="pill pill-pro">13g protein</span>
+        </div>
+      </div>
+
+      <div class="food-card">
+        <div class="food-row">
+          <div>
+            <div class="food-name">Banana</div>
+            <div class="food-amount">1 medium · 120g</div>
+          </div>
+        </div>
+        <div class="nutrient-pills">
+          <span class="pill pill-cal">105 kcal</span>
+          <span class="pill pill-pro">1g protein</span>
+        </div>
+      </div>
+
+      <button class="add-btn">
+        <span class="plus">+</span> Add food
+      </button>
+
+    </div>
+  </div>
+
+  <div>
+    <p class="screen-label">3 — Add food (key screen)</p>
+    <div class="phone">
+      <div class="top-bar">
+        <span class="title">Add food</span>
+      </div>
+
+      <div class="input-card">
+        <div class="input-wrap">
+          <div class="input-label">Food name</div>
+          <input class="input-field" placeholder="e.g. Grilled chicken" type="text" readonly>
+        </div>
+        <div class="input-wrap">
+          <div class="input-label">Amount</div>
+          <input class="input-field" placeholder="e.g. 200g" type="text" readonly>
+        </div>
+
+        <hr class="divider">
+
+        <div class="nutrient-inputs">
+          <div class="input-wrap">
+            <div class="input-label">Calories (kcal)</div>
+            <input class="input-field" placeholder="0" type="text" readonly>
+          </div>
+          <div class="input-wrap">
+            <div class="input-label" style="color:#0F6E56;font-weight:500;">Protein (g)</div>
+            <input class="input-field" placeholder="0" type="text" style="border-color:#5DCAA5;" readonly>
+          </div>
+        </div>
+
+        <p class="highlight-note">Both fields on the same row — siblings, same level</p>
+        <button class="save-btn">Save food</button>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:6px;padding:4px 2px;">
+        <span class="arrow" style="color:#1D9E75;">↑</span>
+        <span class="annotation">Calories + Protein are sibling fields. Same card, same row. No separate screen.</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>
