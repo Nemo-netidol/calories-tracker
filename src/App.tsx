@@ -9,6 +9,7 @@ import { AddFood } from "./components/AddFood";
 import { Coach } from "./components/Coach";
 import { Settings } from "./components/Settings";
 import { GoogleGenAI } from '@google/genai';
+import { useEffect } from "react";
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
@@ -140,12 +141,27 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
+import { getTodayLog } from "./services/foodService";
+
 export function App() {
   const [view, setView] = useState<View>("dashboard");
-  const [foodLog, setFoodLog] = useState<FoodItem[]>(INITIAL_FOOD_LOG);
+  const [foodLog, setFoodLog] = useState<FoodItem[]>([]);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [calorieGoal, setCalorieGoal] = useState(2400);
   const [proteinGoal, setProteinGoal] = useState(150);
+
+  useEffect(() => {
+    const fetchFoods = async () => {
+      try {
+        const data = await getTodayLog();
+        setFoodLog(data || []);
+        console.log(data)
+      } catch (err) {
+        console.error("Failed to fetch food log:", err);
+      }
+    };
+    fetchFoods();
+  }, []);
 
   const todayISO = getTodayISO();
   const todayItems = foodLog.filter((item) => item.date === todayISO);
