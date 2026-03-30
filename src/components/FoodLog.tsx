@@ -35,7 +35,7 @@ export function FoodLog({ foodLog }: FoodLogProps) {
                 >
                   <div className="flex flex-col">
                     <h3 className="font-body font-semibold text-on-surface">{item.name}</h3>
-                    <p className="text-xs text-on-surface-variant">{item.amount}</p>
+                    <p className="text-xs text-on-surface-variant font-medium">{item.time} • {item.date}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className="font-headline font-bold text-on-surface">{item.calories} kcal</span>

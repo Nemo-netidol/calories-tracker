@@ -9,28 +9,39 @@ interface AddFoodProps {
 
 export function AddFood({ onSave, onCancel }: AddFoodProps) {
   const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
   const [calories, setCalories] = useState("");
   const [protein, setProtein] = useState("");
   const [category, setCategory] = useState<FoodItem["category"]>("Lunch");
+  
+  // New States for Custom Date and Time
+  const [customDate, setCustomDate] = useState(new Date().toISOString().split("T")[0]);
+  const [customTime, setCustomTime] = useState(new Date().toTimeString().slice(0, 5));
+
+  const formatAMPM = (timeStr: string) => {
+    const parts = timeStr.split(':');
+    let hours = parseInt(parts[0] || '0');
+    let minutes = parseInt(parts[1] || '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; 
+    return `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     
     const mealData = {
       name,
-      amount: parseInt(amount) || 0,
       calories: parseInt(calories) || 0,
       protein: parseInt(protein) || 0,
       category,
-      time: currentTime,
+      time: formatAMPM(customTime),
+      date: customDate,
     };
 
     // Update local state for immediate UI feedback
     onSave({
       name: mealData.name,
-      amount: mealData.amount,
       calories: mealData.calories,
       protein: mealData.protein,
       category: mealData.category,
@@ -65,26 +76,45 @@ export function AddFood({ onSave, onCancel }: AddFoodProps) {
             </div>
           </div>
 
-          <div>
-            <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
-              Amount (grams)
-            </label>
-            <div className="obsidian-inset rounded-xl p-1 focus-within:ring-1 focus-within:ring-primary transition-all">
-              <input
-                required
-                type="number"
-                className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-stone-600 px-4 py-3 font-body"
-                placeholder="100"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
-                Calories (kcal)
+                Category
+              </label>
+              <div className="obsidian-inset rounded-xl p-1 focus-within:ring-1 focus-within:ring-primary transition-all">
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as any)}
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface px-4 py-3 font-body appearance-none cursor-pointer"
+                >
+                  {["Breakfast", "Lunch", "Dinner", "Snack"].map((cat) => (
+                    <option key={cat} value={cat} className="bg-surface-container-highest">
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
+                Log Date
+              </label>
+              <div className="obsidian-inset rounded-xl p-1 focus-within:ring-1 focus-within:ring-primary transition-all">
+                <input
+                  required
+                  type="date"
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface px-4 py-3 font-body [color-scheme:dark]"
+                  value={customDate}
+                  onChange={(e) => setCustomDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
+                Calories
               </label>
               <div className="obsidian-inset rounded-xl p-1 focus-within:ring-1 focus-within:ring-primary transition-all">
                 <input
@@ -99,7 +129,7 @@ export function AddFood({ onSave, onCancel }: AddFoodProps) {
             </div>
             <div>
               <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
-                Protein (g)
+                Protein
               </label>
               <div className="obsidian-inset rounded-xl p-1 focus-within:ring-1 focus-within:ring-primary transition-all">
                 <input
@@ -112,27 +142,19 @@ export function AddFood({ onSave, onCancel }: AddFoodProps) {
                 />
               </div>
             </div>
-          </div>
-
-          <div>
-            <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
-              Category
-            </label>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {["Breakfast", "Lunch", "Dinner", "Snack"].map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setCategory(cat as any)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                    category === cat
-                      ? "bg-primary-container text-on-primary-container"
-                      : "bg-surface-container-highest text-on-surface-variant"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+            <div>
+              <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
+                Time
+              </label>
+              <div className="obsidian-inset rounded-xl p-1 focus-within:ring-1 focus-within:ring-primary transition-all">
+                <input
+                  required
+                  type="time"
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface px-4 py-3 font-body [color-scheme:dark]"
+                  value={customTime}
+                  onChange={(e) => setCustomTime(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
