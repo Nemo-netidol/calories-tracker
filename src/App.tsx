@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./index.css";
 import type { View, FoodItem, Message } from "./types";
 import { Header } from "./components/Header";
@@ -8,129 +8,46 @@ import { FoodLog } from "./components/FoodLog";
 import { AddFood } from "./components/AddFood";
 import { Coach } from "./components/Coach";
 import { Settings } from "./components/Settings";
+import { FoodCardList } from "./components/FoodCardList";
+import { Login } from "./components/Login";
 import { GoogleGenAI } from '@google/genai';
-import { useEffect } from "react";
+import { getTodayLog, deleteFood, checkAuth, loginUser, logoutUser } from "./services/foodService";
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 async function getAIResponse(prompt: string) {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
-      return response.text;
-    }
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: `You are a nutrition expert. Today is ${new Date().toLocaleDateString()}. Your task is to read the user's message and extract the food items they consumed and give me the calories and protein content of each item. Respond with a JSON array of food items in the format: [{ "name": "Food Name", "calories": 0, "protein": 0, "category": "Category", "date": "YYYY-MM-DD", "time": "HH:MM AM/PM" }]. Do not include any other text.`,
+        responseSchema: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              calories: { type: "number" },
+              protein: { type: "number" },
+              category: { type: "string" },
+              date: { type: "string" },
+              time: { type: "string" }
+            },
+            required: ["name", "calories", "protein", "category"]
+          }
+        },
+        responseMimeType: "application/json"
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    return "Error communicating with AI Assistant.";
+  }
+}
 
 const getTodayISO = () => new Date().toISOString().split("T")[0];
-const getPastDateISO = (daysAgo: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return d.toISOString().split("T")[0];
-};
-
-const INITIAL_FOOD_LOG: FoodItem[] = [
-  {
-    id: "1",
-    name: "Oats with Almond Milk",
-    amount: "1 bowl (350g)",
-    calories: 310,
-    protein: 12,
-    time: "8:45 AM",
-    date: getTodayISO(),
-    category: "Breakfast",
-  },
-  {
-    id: "2",
-    name: "Black Coffee",
-    amount: "Large (400ml)",
-    calories: 5,
-    protein: 0,
-    time: "9:00 AM",
-    date: getTodayISO(),
-    category: "Breakfast",
-  },
-  {
-    id: "3",
-    name: "Grilled Chicken Salad",
-    amount: "Standard portion",
-    calories: 450,
-    protein: 45,
-    time: "1:30 PM",
-    date: getTodayISO(),
-    category: "Lunch",
-  },
-  {
-    id: "4",
-    name: "Protein Shake",
-    amount: "1 scoop whey",
-    calories: 140,
-    protein: 24,
-    time: "4:00 PM",
-    date: getTodayISO(),
-    category: "Snack",
-  },
-  // Past data for graph
-  {
-    id: "p1",
-    name: "Dinner",
-    amount: "Portion",
-    calories: 1800,
-    protein: 80,
-    time: "7:00 PM",
-    date: getPastDateISO(1),
-    category: "Dinner",
-  },
-  {
-    id: "p2",
-    name: "Meals",
-    amount: "Full Day",
-    calories: 2200,
-    protein: 140,
-    time: "8:00 PM",
-    date: getPastDateISO(2),
-    category: "Dinner",
-  },
-  {
-    id: "p3",
-    name: "Meals",
-    amount: "Full Day",
-    calories: 1500,
-    protein: 100,
-    time: "8:00 PM",
-    date: getPastDateISO(3),
-    category: "Dinner",
-  },
-  {
-    id: "p4",
-    name: "Meals",
-    amount: "Full Day",
-    calories: 2600,
-    protein: 160,
-    time: "8:00 PM",
-    date: getPastDateISO(4),
-    category: "Dinner",
-  },
-  {
-    id: "p5",
-    name: "Meals",
-    amount: "Full Day",
-    calories: 2100,
-    protein: 130,
-    time: "8:00 PM",
-    date: getPastDateISO(5),
-    category: "Dinner",
-  },
-  {
-    id: "p6",
-    name: "Meals",
-    amount: "Full Day",
-    calories: 1900,
-    protein: 120,
-    time: "8:00 PM",
-    date: getPastDateISO(6),
-    category: "Dinner",
-  },
-];
 
 const INITIAL_MESSAGES: Message[] = [
   {
@@ -141,27 +58,87 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
-import { getTodayLog } from "./services/foodService";
-
 export function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+
   const [view, setView] = useState<View>("dashboard");
   const [foodLog, setFoodLog] = useState<FoodItem[]>([]);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [calorieGoal, setCalorieGoal] = useState(2400);
   const [proteinGoal, setProteinGoal] = useState(150);
+  const [detectedFoods, setDetectedFoods] = useState<FoodItem[]>([]);
+  const [showDetectionModal, setShowDetectionModal] = useState(false);
 
+  // Check auth on mount
   useEffect(() => {
-    const fetchFoods = async () => {
+    const checkSession = async () => {
       try {
-        const data = await getTodayLog();
-        setFoodLog(data || []);
-        console.log(data)
+        const res = await checkAuth();
+        if (res.authenticated) {
+          setIsAuthenticated(true);
+          fetchFoods();
+        }
       } catch (err) {
-        console.error("Failed to fetch food log:", err);
+        console.error("Auth check failed:", err);
+      } finally {
+        setIsAuthChecked(true);
       }
     };
-    fetchFoods();
+    checkSession();
   }, []);
+
+  const fetchFoods = async () => {
+    try {
+      const data = await getTodayLog();
+      setFoodLog(data || []);
+    } catch (err) {
+      console.error("Failed to fetch food log:", err);
+      if ((err as Error).message.includes("Not authenticated")) {
+        setIsAuthenticated(false);
+      }
+    }
+  };
+
+  const handleLogin = async (password: string) => {
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      const res = await loginUser(password);
+      if (res.ok) {
+        setIsAuthenticated(true);
+        fetchFoods();
+      }
+    } catch (err) {
+      setAuthError((err as Error).message || "Invalid password. Please try again.");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setIsAuthenticated(false);
+      setFoodLog([]);
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <span className="animate-spin material-symbols-outlined text-primary text-4xl">progress_activity</span>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} isLoading={isAuthLoading} error={authError} />;
+  }
 
   const todayISO = getTodayISO();
   const todayItems = foodLog.filter((item) => item.date === todayISO);
@@ -180,7 +157,7 @@ export function App() {
       const dayProtein = dayItems.reduce((sum, item) => sum + item.protein, 0);
       
       result.push({
-        day: days[d.getDay()],
+        day: days[d.getDay()] ?? "",
         calories: dayCalories,
         protein: dayProtein,
       });
@@ -199,6 +176,16 @@ export function App() {
     setView("log");
   };
 
+  const handleDeleteFood = async (id: string) => {
+    try {
+      await deleteFood(id);
+      setFoodLog(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      console.error("Failed to delete food:", err);
+      alert("Failed to delete food log entry.");
+    }
+  };
+
   const handleSendMessage = async (text: string) => {
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -209,15 +196,61 @@ export function App() {
     setMessages((prev) => [...prev, userMsg]);
 
     try {
-      // AI response
       const responseText = await getAIResponse(userMsg.text);
+      const isJson = responseText?.trim().startsWith('[') || responseText?.trim().startsWith('{');
       const AIMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "bot",
-        text: responseText || "I'm not exactly sure how to help with that.",
+        text: isJson ? "I've detected some food items from your message. Review them below!" : (responseText || "I'm not exactly sure how to help with that."),
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, AIMsg]);
+
+      if (responseText) {
+        try {
+          const parsed = JSON.parse(responseText.trim());
+          const foodItems = Array.isArray(parsed) ? parsed : [parsed];
+          
+          if (foodItems.length > 0) {
+            const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            setDetectedFoods(foodItems.map((item: any, idx: number) => ({
+              id: item.id || `detected-${Date.now()}-${idx}`,
+              name: item.name || "Unknown Food",
+              calories: parseInt(item.calories) || 0,
+              protein: parseInt(item.protein) || 0,
+              category: item.category || "Snack",
+              date: getTodayISO(),
+              time: currentTime
+            })) as FoodItem[]);
+            setShowDetectionModal(true);
+          }
+        } catch (e) {
+          console.log("Response text was not pure JSON, trying regex fallback...");
+          const jsonMatch = responseText.match(/\[\s*\{.*\}\s*\]/s) || responseText.match(/\{\s*".*\}\s*/s);
+          if (jsonMatch) {
+            try {
+              const rawJson = jsonMatch[0].replace(/```json|```/g, '').trim();
+              const parsed = JSON.parse(rawJson);
+              const foodItems = Array.isArray(parsed) ? parsed : [parsed];
+              if (foodItems.length > 0) {
+                const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                setDetectedFoods(foodItems.map((item: any, idx: number) => ({
+                  id: item.id || `detected-${Date.now()}-${idx}`,
+                  name: item.name || "Unknown Food",
+                  calories: parseInt(item.calories) || 0,
+                  protein: parseInt(item.protein) || 0,
+                  category: item.category || "Snack",
+                  date: getTodayISO(),
+                  time: currentTime
+                })) as FoodItem[]);
+                setShowDetectionModal(true);
+              }
+            } catch (innerE) {
+              console.error("Failed to parse JSON from AI response:", innerE);
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error("AI Error:", error);
     }
@@ -244,19 +277,29 @@ export function App() {
             weeklyData={calculateWeeklyData()}
           />
         )}
-        {view === "log" && <FoodLog foodLog={foodLog} />}
+        {view === "log" && <FoodLog foodLog={foodLog} onDelete={handleDeleteFood} />}
         {view === "add" && <AddFood onSave={handleAddFood} onCancel={() => setView("dashboard")} />}
         {view === "coach" && <Coach messages={messages} onSend={handleSendMessage} />}
         {view === "settings" && (
           <Settings
             calorieGoal={calorieGoal}
             proteinGoal={proteinGoal}
+            foodLog={foodLog}
             onUpdateGoals={handleUpdateGoals}
+            onLogout={handleLogout}
           />
         )}
       </main>
 
       <BottomNav activeView={view} setView={setView} />
+      
+      {showDetectionModal && (
+        <FoodCardList 
+          initialFoods={detectedFoods} 
+          onClose={() => setShowDetectionModal(false)} 
+          title="AI Food Detection"
+        />
+      )}
     </div>
   );
 }

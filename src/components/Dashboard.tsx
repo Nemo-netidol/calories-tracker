@@ -108,37 +108,37 @@ export function Dashboard({
         <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/10 h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weeklyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-              <XAxis 
-                dataKey="day" 
-                axisLine={false} 
-                tickLine={false} 
+              <XAxis
+                dataKey="day"
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 10, fontWeight: 500 }}
                 dy={10}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-              <Bar 
-                dataKey="calories" 
-                fill={PRIMARY_COLOR} 
-                radius={[4, 4, 0, 0]} 
+              <Bar
+                dataKey="calories"
+                fill={PRIMARY_COLOR}
+                radius={[4, 4, 0, 0]}
                 barSize={12}
               >
                 {weeklyData.map((_, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={index === weeklyData.length - 1 ? PRIMARY_COLOR : `${PRIMARY_COLOR}66`} 
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={index === weeklyData.length - 1 ? PRIMARY_COLOR : `${PRIMARY_COLOR}66`}
                   />
                 ))}
               </Bar>
-              <Bar 
-                dataKey="protein" 
-                fill={SECONDARY_COLOR} 
-                radius={[4, 4, 0, 0]} 
+              <Bar
+                dataKey="protein"
+                fill={SECONDARY_COLOR}
+                radius={[4, 4, 0, 0]}
                 barSize={12}
               >
                 {weeklyData.map((_, index) => (
-                  <Cell 
-                    key={`cell-p-${index}`} 
-                    fill={index === weeklyData.length - 1 ? SECONDARY_COLOR : `${SECONDARY_COLOR}66`} 
+                  <Cell
+                    key={`cell-p-${index}`}
+                    fill={index === weeklyData.length - 1 ? SECONDARY_COLOR : `${SECONDARY_COLOR}66`}
                   />
                 ))}
               </Bar>

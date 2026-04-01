@@ -1,5 +1,5 @@
 import React from "react";
-import {test} from "../services/foodService"
+import { test } from "../services/foodService"
 
 export function Header() {
   return (
@@ -7,7 +7,7 @@ export function Header() {
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center overflow-hidden border border-outline-variant/20">
           <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+            src="https://gametora.com/images/umamusume/characters/chara_stand_1065_106501.png"
             alt="Profile"
             className="w-full h-full object-cover"
             onClick={test}

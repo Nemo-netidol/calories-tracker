@@ -1,0 +1,65 @@
+[
+  {
+    "id": "1",
+    "name": "Oatmeal with Berries",
+    "calories": 350,
+    "protein": 12,
+    "time": "08:30",
+    "date": "2026-03-31",
+    "category": "Breakfast"
+  },
+  {
+    "id": "2",
+    "name": "Grilled Chicken Salad",
+    "calories": 450,
+    "protein": 35,
+    "time": "12:45",
+    "date": "2026-03-31",
+    "category": "Lunch"
+  },
+  {
+    "id": "3",
+    "name": "Greek Yogurt",
+    "calories": 150,
+    "protein": 15,
+    "time": "15:30",
+    "date": "2026-03-31",
+    "category": "Snack"
+  },
+  {
+    "id": "4",
+    "name": "Baked Salmon with Broccoli",
+    "calories": 550,
+    "protein": 40,
+    "time": "19:15",
+    "date": "2026-03-31",
+    "category": "Dinner"
+  },
+  {
+    "id": "5",
+    "name": "Avocado Toast",
+    "calories": 280,
+    "protein": 8,
+    "time": "09:00",
+    "date": "2026-03-30",
+    "category": "Breakfast"
+  },
+  {
+    "id": "6",
+    "name": "Turkey Wrap",
+    "calories": 400,
+    "protein": 25,
+    "time": "13:00",
+    "date": "2026-03-30",
+    "category": "Lunch"
+  },
+  {
+    "id": "7",
+    "name": "Handful of Almonds",
+    "calories": 160,
+    "protein": 6,
+    "time": "16:20",
+    "date": "2026-03-30",
+    "category": "Snack"
+  }
+]

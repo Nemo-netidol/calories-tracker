@@ -4,10 +4,12 @@ import type { FoodItem } from "../types";
 interface SettingsProps {
   calorieGoal: number;
   proteinGoal: number;
+  foodLog: FoodItem[];
   onUpdateGoals: (calories: number, protein: number) => void;
+  onLogout: () => void;
 }
 
-export function Settings({ calorieGoal, proteinGoal, onUpdateGoals }: SettingsProps) {
+export function Settings({ calorieGoal, proteinGoal, foodLog, onUpdateGoals, onLogout }: SettingsProps) {
   const [tempCalories, setTempCalories] = useState(calorieGoal.toString());
   const [tempProtein, setTempProtein] = useState(proteinGoal.toString());
 
@@ -16,11 +18,46 @@ export function Settings({ calorieGoal, proteinGoal, onUpdateGoals }: SettingsPr
     onUpdateGoals(parseInt(tempCalories) || 0, parseInt(tempProtein) || 0);
   };
 
+  const handleDownloadCSV = () => {
+    if (foodLog.length === 0) {
+      alert("No data available to download.");
+      return;
+    }
+
+    const headers = ["Date", "Time", "Food Item", "Category", "Calories (kcal)", "Protein (g)"];
+    const rows = foodLog.map(item => [
+      item.date,
+      item.time,
+      `"${item.name.replace(/"/g, '""')}"`,
+      item.category,
+      item.calories,
+      item.protein
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `food_log_history_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="py-4 space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h2 className="font-headline font-extrabold text-2xl text-on-surface">Settings</h2>
-        <p className="text-sm text-on-surface-variant">Manage your nutrition targets</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="font-headline font-extrabold text-2xl text-on-surface">Settings</h2>
+          <p className="text-sm text-on-surface-variant">Manage your nutrition targets and session</p>
+        </div>
       </div>
 
       <div className="bg-surface-container rounded-3xl p-8 border border-outline-variant/10 shadow-xl">
@@ -56,20 +93,43 @@ export function Settings({ calorieGoal, proteinGoal, onUpdateGoals }: SettingsPr
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-primary-container text-on-primary-container font-headline font-bold py-4 rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              className="w-full bg-primary text-on-primary font-headline font-bold py-4 rounded-xl shadow-lg hover:shadow-primary/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-xl">save</span>
-              Update Goals
+              Save Targets
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="bg-surface-container rounded-3xl p-8 border border-outline-variant/10 shadow-xl">
+        <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">
+          Support & Management
+        </label>
+        <div className="space-y-3">
+          <button
+            onClick={handleDownloadCSV}
+            className="w-full bg-primary/5 text-primary font-headline font-bold py-4 rounded-xl border border-primary/20 hover:bg-primary/10 transition-all flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-xl">download</span>
+            Download CSV History
+          </button>
+          
+          <button
+            onClick={onLogout}
+            className="w-full bg-error/5 text-error font-headline font-bold py-4 rounded-xl border border-error/20 hover:bg-error/10 transition-all flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-xl">logout</span>
+            Sign Out
+          </button>
+        </div>
       </div>
 
       <div className="bg-surface-container-low rounded-2xl p-6 border border-outline-variant/5">
         <div className="flex items-center gap-4 text-on-surface-variant">
           <span className="material-symbols-outlined">info</span>
           <p className="text-xs leading-relaxed">
-            Changing your goals will immediately update your daily progress tracking on the dashboard.
+            Locked session active. Your data is only accessible on this device while you remain signed in.
           </p>
         </div>
       </div>
