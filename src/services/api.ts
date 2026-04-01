@@ -1,7 +1,7 @@
-const LOCAL_BASE_URL = import.meta.env.VITE_API_URL
+const BASE_URL = import.meta.env.VITE_API_URL
 
 const request = async (method: string, path: string, body?: any) => {
-  const res = await fetch(`${LOCAL_BASE_URL}${path}`, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // Important to send/receive cookies
