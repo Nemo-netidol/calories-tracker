@@ -1,4 +1,4 @@
-const LOCAL_BASE_URL = import.meta.env.VITE_LOCAL_API_URL
+const LOCAL_BASE_URL = import.meta.env.VITE_API_URL
 
 const request = async (method: string, path: string, body?: any) => {
   const res = await fetch(`${LOCAL_BASE_URL}${path}`, {
