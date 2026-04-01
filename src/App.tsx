@@ -96,7 +96,8 @@ export function App() {
       setFoodLog(data || []);
     } catch (err) {
       console.error("Failed to fetch food log:", err);
-      if ((err as Error).message.includes("Not authenticated")) {
+      // Only redirect to login if we're not inside the loading state
+      if ((err as Error).message.includes("Not authenticated") && !isAuthLoading) {
         setIsAuthenticated(false);
       }
     }
@@ -109,11 +110,16 @@ export function App() {
       const res = await loginUser(password);
       if (res.ok) {
         setIsAuthenticated(true);
-        fetchFoods();
+        // Step 2: Fetch data while still in "loading" state to prevent flicker
+        setTimeout(async () => {
+          await fetchFoods();
+          setIsAuthLoading(false);
+        }, 300); // 300ms is a safe harbor for Safari ITP
+      } else {
+        setIsAuthLoading(false);
       }
     } catch (err) {
       setAuthError((err as Error).message || "Invalid password. Please try again.");
-    } finally {
       setIsAuthLoading(false);
     }
   };
