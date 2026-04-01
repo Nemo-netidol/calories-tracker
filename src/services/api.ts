@@ -1,10 +1,19 @@
-const BASE_URL = import.meta.env.VITE_API_URL
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const request = async (method: string, path: string, body?: any) => {
+  const token = localStorage.getItem('calories_tracker_token');
+  
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // Important to send/receive cookies
+    headers,
     body: body ? JSON.stringify(body) : undefined
   })
   

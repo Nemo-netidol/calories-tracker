@@ -75,11 +75,19 @@ export function App() {
   // Check auth on mount
   useEffect(() => {
     const checkSession = async () => {
+      const savedToken = localStorage.getItem('calories_tracker_token');
+      if (!savedToken) {
+        setIsAuthChecked(true);
+        return;
+      }
+      
       try {
         const res = await checkAuth();
         if (res.authenticated) {
           setIsAuthenticated(true);
-          fetchFoods();
+          await fetchFoods();
+        } else {
+          localStorage.removeItem('calories_tracker_token');
         }
       } catch (err) {
         console.error("Auth check failed:", err);
@@ -96,9 +104,9 @@ export function App() {
       setFoodLog(data || []);
     } catch (err) {
       console.error("Failed to fetch food log:", err);
-      // Only redirect to login if we're not inside the loading state
-      if ((err as Error).message.includes("Not authenticated") && !isAuthLoading) {
+      if ((err as Error).message.includes("Not authenticated")) {
         setIsAuthenticated(false);
+        localStorage.removeItem('calories_tracker_token');
       }
     }
   };
@@ -108,18 +116,15 @@ export function App() {
     setAuthError(null);
     try {
       const res = await loginUser(password);
-      if (res.ok) {
+      if (res.token) {
+        // Store token for Bearer authentication to bypass Safari ITP (cross-site tracking)
+        localStorage.setItem('calories_tracker_token', res.token);
         setIsAuthenticated(true);
-        // Step 2: Fetch data while still in "loading" state to prevent flicker
-        setTimeout(async () => {
-          await fetchFoods();
-          setIsAuthLoading(false);
-        }, 300); // 300ms is a safe harbor for Safari ITP
-      } else {
-        setIsAuthLoading(false);
+        await fetchFoods();
       }
     } catch (err) {
       setAuthError((err as Error).message || "Invalid password. Please try again.");
+    } finally {
       setIsAuthLoading(false);
     }
   };
@@ -127,10 +132,12 @@ export function App() {
   const handleLogout = async () => {
     try {
       await logoutUser();
-      setIsAuthenticated(false);
-      setFoodLog([]);
     } catch (err) {
       console.error("Logout failed:", err);
+    } finally {
+      setIsAuthenticated(false);
+      localStorage.removeItem('calories_tracker_token');
+      setFoodLog([]);
     }
   };
 
