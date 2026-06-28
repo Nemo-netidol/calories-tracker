@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -15,6 +16,7 @@ interface DashboardProps {
   proteinGoal: number;
   recentMeals: FoodItem[];
   weeklyData: { day: string; calories: number; protein: number; isToday?: boolean }[];
+  onQuickLog?: (item: Omit<FoodItem, "id">) => Promise<void>;
 }
 
 export function Dashboard({
@@ -24,9 +26,44 @@ export function Dashboard({
   proteinGoal,
   recentMeals,
   weeklyData,
+  onQuickLog,
 }: DashboardProps) {
   const calorieProgress = (totalCalories / calorieGoal) * 100;
   const proteinProgress = (totalProtein / proteinGoal) * 100;
+
+  const [loggingState, setLoggingState] = useState<'idle' | 'logging-1' | 'logging-1.5' | 'success-1' | 'success-1.5'>('idle');
+  const isLogging = loggingState.startsWith('logging');
+
+  const handleQuickLog = async (scoops: 1 | 1.5) => {
+    if (!onQuickLog) return;
+    
+    const suffix = scoops === 1 ? '1' : '1.5';
+    setLoggingState(`logging-${suffix}` as any);
+    
+    const protein = scoops === 1 ? 25 : 38;
+    const calories = scoops === 1 ? 130 : 195;
+    const name = `Protein Shake (${scoops} Scoop${scoops > 1 ? 's' : ''})`;
+    const todayISO = new Date().toISOString().split("T")[0];
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    
+    try {
+      await onQuickLog({
+        name,
+        calories,
+        protein,
+        category: "Snack",
+        date: todayISO,
+        time,
+      });
+      setLoggingState(`success-${suffix}` as any);
+      setTimeout(() => {
+        setLoggingState('idle');
+      }, 1500);
+    } catch (err) {
+      console.error("Failed to log protein shake:", err);
+      setLoggingState('idle');
+    }
+  };
 
   // Claude-inspired colors
   const PRIMARY_COLOR = "#d97757"; // Orange
@@ -115,6 +152,60 @@ export function Dashboard({
               className="h-full bg-secondary rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(64,179,162,0.3)]"
               style={{ width: `${Math.min(proteinProgress, 100)}%` }}
             ></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Track Protein Shakes */}
+      <section className="space-y-4">
+        <h2 className="font-headline text-sm font-bold text-on-surface uppercase tracking-widest">Quick Log</h2>
+        
+        <div className="bg-surface-container rounded-3xl p-6 border border-outline relative overflow-hidden group">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary transition-all group-hover:bg-primary/20">
+                <span className="material-symbols-outlined font-bold text-2xl">local_bar</span>
+              </div>
+              <div>
+                <h3 className="font-headline text-base font-extrabold text-on-surface">Protein Shake</h3>
+                <p className="text-xs text-on-surface-variant font-medium mt-0.5">Log protein intake instantly</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => handleQuickLog(1)}
+                disabled={isLogging}
+                className="flex flex-col items-center justify-center p-4 bg-background hover:bg-surface-bright border border-outline hover:border-primary/30 rounded-2xl transition-all cursor-pointer active:scale-95 text-center group/btn relative min-w-[120px] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loggingState === 'logging-1' ? (
+                  <span className="animate-spin material-symbols-outlined text-primary text-xl mb-1">progress_activity</span>
+                ) : loggingState === 'success-1' ? (
+                  <span className="material-symbols-outlined text-green-500 text-xl mb-1 font-bold">check_circle</span>
+                ) : (
+                  <span className="font-headline text-lg font-black text-primary mb-1">1.0</span>
+                )}
+                <span className="font-label text-xs font-bold text-on-surface">1 Scoop</span>
+                <span className="text-[10px] text-on-surface-variant font-medium mt-1">25g P • 130 kcal</span>
+              </button>
+
+              <button
+                onClick={() => handleQuickLog(1.5)}
+                disabled={isLogging}
+                className="flex flex-col items-center justify-center p-4 bg-background hover:bg-surface-bright border border-outline hover:border-secondary/30 rounded-2xl transition-all cursor-pointer active:scale-95 text-center group/btn relative min-w-[120px] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loggingState === 'logging-1.5' ? (
+                  <span className="animate-spin material-symbols-outlined text-secondary text-xl mb-1">progress_activity</span>
+                ) : loggingState === 'success-1.5' ? (
+                  <span className="material-symbols-outlined text-green-500 text-xl mb-1 font-bold">check_circle</span>
+                ) : (
+                  <span className="font-headline text-lg font-black text-secondary mb-1">1.5</span>
+                )}
+                <span className="font-label text-xs font-bold text-on-surface">1.5 Scoops</span>
+                <span className="text-[10px] text-on-surface-variant font-medium mt-1">38g P • 195 kcal</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>

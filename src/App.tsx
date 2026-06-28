@@ -230,6 +230,16 @@ export function App() {
     }
   };
 
+  const handleQuickLog = async (newItem: Omit<FoodItem, "id">) => {
+    try {
+      const savedItem = await logMeal(newItem);
+      setFoodLog(prev => [savedItem, ...prev]);
+    } catch (err) {
+      console.error("Failed to quick log food:", err);
+      throw err;
+    }
+  };
+
   const handleDeleteFood = async (id: string) => {
     try {
       await deleteFood(id);
@@ -347,6 +357,7 @@ export function App() {
             proteinGoal={user.target_protein}
             recentMeals={todayItems.slice(0, 3)}
             weeklyData={calculateWeeklyData()}
+            onQuickLog={handleQuickLog}
           />
         )}
         {view === "log" && <FoodLog foodLog={foodLog} onDelete={handleDeleteFood} onUpdate={handleUpdateFood} />}
