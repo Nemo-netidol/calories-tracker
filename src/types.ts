@@ -1,4 +1,4 @@
-export type View = "dashboard" | "log" | "add" | "coach" | "settings";
+export type View = "dashboard" | "diary" | "add" | "coach" | "settings";
 
 export interface FoodItem {
   id: string;
@@ -8,6 +8,8 @@ export interface FoodItem {
   time: string;
   date: string; // ISO format (YYYY-MM-DD)
   category: "Breakfast" | "Lunch" | "Dinner" | "Snack";
+  carbs?: number | null;
+  fat?: number | null;
 }
 
 export interface Message {
@@ -23,6 +25,8 @@ export interface User {
   weight: number;
   target_calories: number;
   target_protein: number;
+  target_carbs: number;
+  target_fat: number;
   tdee: number;
   bmr: number;
 }

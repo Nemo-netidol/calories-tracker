@@ -1,5 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL 
-// const BASE_URL = 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_URL
 
 const request = async (method: string, path: string, body?: any) => {
   const token = localStorage.getItem('calories_tracker_token');

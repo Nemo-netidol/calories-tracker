@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { FoodItem } from "../types";
 import { Modal } from "./Modal";
+import { timeToMinutes } from "../utils/time";
 
 interface FoodLogProps {
   foodLog: FoodItem[];
@@ -15,12 +16,18 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
     name: string;
     calories: number;
     protein: number;
+    carbs: number | null;
+    fat: number | null;
     category: FoodItem["category"];
+    date: string;
   }>({
     name: "",
     calories: 0,
     protein: 0,
-    category: "Lunch"
+    carbs: null,
+    fat: null,
+    category: "Lunch",
+    date: new Date().toISOString().slice(0, 10)
   });
 
   const startEditing = (item: FoodItem) => {
@@ -29,7 +36,10 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
       name: item.name,
       calories: item.calories,
       protein: item.protein,
-      category: item.category
+      carbs: item.carbs ?? null,
+      fat: item.fat ?? null,
+      category: item.category,
+      date: item.date
     });
   };
 
@@ -52,12 +62,12 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
   const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
   const formatDisplayDate = (dateStr: string) => {
-    const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
     if (dateStr === today) return "Today";
     if (dateStr === yesterday) return "Yesterday";
-    
+
     return new Date(dateStr).toLocaleDateString("en-US", {
       weekday: "long",
       month: "short",
@@ -77,7 +87,7 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
           }
         }}
         title="Delete Entry?"
-        message={`Are you sure you want to remove "${itemToDelete?.name}" from your log? This cannot be undone.`}
+        message={`Remove "${itemToDelete?.name}" from your log? You'll have a few seconds to undo it after.`}
         confirmText="Delete"
         type="danger"
       />
@@ -87,14 +97,16 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
           <div className="w-20 h-20 bg-surface-container rounded-3xl flex items-center justify-center mx-auto mb-6 border border-outline">
             <span className="material-symbols-outlined text-4xl text-on-surface-variant">history_edu</span>
           </div>
-          <p className="font-headline text-xl font-bold text-on-surface">Your journal is empty</p>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-[240px] mx-auto">Start logging your meals to see your nutrition history here.</p>
+          <p className="font-headline text-title font-bold text-on-surface">Your journal is empty</p>
+          <p className="text-body-sm text-on-surface-variant mt-2 max-w-[240px] mx-auto">Start logging your meals to see your nutrition history here.</p>
         </div>
       ) : (
         sortedDates.map((date) => {
-          const items = (groupedByDate[date] || []).sort((a, b) => b.time.localeCompare(a.time));
+          const items = (groupedByDate[date] || []).sort((a, b) => timeToMinutes(b.time) - timeToMinutes(a.time));
           const dailyCalories = items.reduce((sum, i) => sum + i.calories, 0);
           const dailyProtein = items.reduce((sum, i) => sum + i.protein, 0);
+          const dailyCarbs = items.reduce((sum, i) => sum + (i.carbs ?? 0), 0);
+          const dailyFat = items.reduce((sum, i) => sum + (i.fat ?? 0), 0);
 
           return (
             <section key={date} className="relative space-y-6">
@@ -102,43 +114,69 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
               <div className="bg-surface-container rounded-[2.5rem] p-6 sm:p-8 border border-outline shadow-sm">
                 <div className="flex justify-between items-center mb-6 gap-2">
                   <div className="min-w-0">
-                    <h2 className="font-headline text-2xl sm:text-3xl font-black text-on-surface tracking-tighter leading-tight truncate">
+                    <h2 className="font-headline text-title sm:text-headline font-black text-on-surface tracking-tighter leading-tight truncate">
                       {formatDisplayDate(date)}
                     </h2>
-                    <p className="text-[9px] sm:text-[10px] text-on-surface-variant font-black uppercase tracking-[0.2em] mt-1 sm:mt-2">
-                      {date === new Date().toISOString().split("T")[0] ? "Current Day" : "Log History"}
+                    <p className="text-caption text-on-surface-variant font-black uppercase tracking-[0.2em] mt-1 sm:mt-2">
+                      {date === new Date().toISOString().slice(0, 10) ? "Current Day" : "Log History"}
                     </p>
                   </div>
                   <div className="bg-background/50 rounded-2xl px-3 py-1.5 border border-outline flex-shrink-0 shadow-inner">
-                    <span className="text-[10px] font-black text-primary uppercase tracking-widest whitespace-nowrap leading-none">
+                    <span className="text-caption font-black text-primary uppercase tracking-widest whitespace-nowrap leading-none">
                       {items.length} {items.length === 1 ? 'Entry' : 'Entries'}
                     </span>
                   </div>
                 </div>
-                
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                  <div className="flex-1 bg-background/40 rounded-3xl p-4 border border-outline flex items-center gap-3">
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-background/40 rounded-3xl p-4 border border-outline flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-primary/10 flex-shrink-0 flex items-center justify-center border border-primary/20">
                       <span className="material-symbols-outlined text-lg text-primary">local_fire_department</span>
                     </div>
-                    <div>
-                      <span className="block text-[9px] text-on-surface-variant font-black uppercase tracking-[0.1em] mb-0.5">Energy</span>
+                    <div className="min-w-0">
+                      <span className="block text-caption text-on-surface-variant font-black uppercase tracking-[0.1em] mb-0.5">Energy</span>
                       <div className="flex items-baseline gap-1">
-                        <span className="font-headline font-bold text-xl text-on-surface leading-none">{dailyCalories}</span>
-                        <span className="text-[10px] text-on-surface-variant font-bold uppercase">kcal</span>
+                        <span className="font-headline font-bold text-title text-on-surface leading-none">{dailyCalories}</span>
+                        <span className="text-caption text-on-surface-variant font-bold uppercase">kcal</span>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex-1 bg-background/40 rounded-3xl p-4 border border-outline flex items-center gap-3">
+
+                  <div className="bg-background/40 rounded-3xl p-4 border border-outline flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-secondary/10 flex-shrink-0 flex items-center justify-center border border-secondary/20">
                       <span className="material-symbols-outlined text-lg text-secondary">fitness_center</span>
                     </div>
-                    <div>
-                      <span className="block text-[9px] text-on-surface-variant font-black uppercase tracking-[0.1em] mb-0.5">Protein</span>
+                    <div className="min-w-0">
+                      <span className="block text-caption text-on-surface-variant font-black uppercase tracking-[0.1em] mb-0.5">Protein</span>
                       <div className="flex items-baseline gap-1">
-                        <span className="font-headline font-bold text-xl text-on-surface leading-none">{dailyProtein}</span>
-                        <span className="text-[10px] text-on-surface-variant font-bold uppercase">g</span>
+                        <span className="font-headline font-bold text-title text-on-surface leading-none">{dailyProtein}</span>
+                        <span className="text-caption text-on-surface-variant font-bold uppercase">g</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-background/40 rounded-3xl p-4 border border-outline flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-success/10 flex-shrink-0 flex items-center justify-center border border-success/20">
+                      <span className="material-symbols-outlined text-lg text-success">bakery_dining</span>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-caption text-on-surface-variant font-black uppercase tracking-[0.1em] mb-0.5">Carbs</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-headline font-bold text-title text-on-surface leading-none">{dailyCarbs}</span>
+                        <span className="text-caption text-on-surface-variant font-bold uppercase">g</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-background/40 rounded-3xl p-4 border border-outline flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-warning/10 flex-shrink-0 flex items-center justify-center border border-warning/20">
+                      <span className="material-symbols-outlined text-lg text-warning">water_drop</span>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-caption text-on-surface-variant font-black uppercase tracking-[0.1em] mb-0.5">Fat</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-headline font-bold text-title text-on-surface leading-none">{dailyFat}</span>
+                        <span className="text-caption text-on-surface-variant font-bold uppercase">g</span>
                       </div>
                     </div>
                   </div>
@@ -156,18 +194,18 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant ml-1">Food Name</label>
+                              <label className="text-label font-black uppercase tracking-widest text-on-surface-variant ml-1">Food Name</label>
                               <input 
                                 type="text"
-                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
                                 value={editFields.name}
                                 onChange={(e) => setEditFields({ ...editFields, name: e.target.value })}
                               />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant ml-1">Category</label>
+                              <label className="text-label font-black uppercase tracking-widest text-on-surface-variant ml-1">Category</label>
                               <select 
-                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none"
+                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none"
                                 value={editFields.category}
                                 onChange={(e) => setEditFields({ ...editFields, category: e.target.value as any })}
                               >
@@ -176,27 +214,60 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
                             </div>
                           </div>
                           
+                          <div className="space-y-1">
+                            <label className="text-label font-black uppercase tracking-widest text-on-surface-variant ml-1">Date</label>
+                            <input
+                              type="date"
+                              className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                              value={editFields.date}
+                              onChange={(e) => setEditFields({ ...editFields, date: e.target.value })}
+                            />
+                          </div>
+
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant ml-1">Calories (kcal)</label>
+                              <label className="text-label font-black uppercase tracking-widest text-on-surface-variant ml-1">Calories (kcal)</label>
                               <input 
                                 type="number"
-                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
                                 value={editFields.calories}
                                 onChange={(e) => setEditFields({ ...editFields, calories: parseInt(e.target.value) || 0 })}
                               />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant ml-1">Protein (g)</label>
-                              <input 
+                              <label className="text-label font-black uppercase tracking-widest text-on-surface-variant ml-1">Protein (g)</label>
+                              <input
                                 type="number"
-                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
                                 value={editFields.protein}
                                 onChange={(e) => setEditFields({ ...editFields, protein: parseInt(e.target.value) || 0 })}
                               />
                             </div>
                           </div>
-                          
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-label font-black uppercase tracking-widest text-on-surface-variant ml-1">Carbs (g)</label>
+                              <input
+                                type="number"
+                                placeholder="—"
+                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                                value={editFields.carbs ?? ""}
+                                onChange={(e) => setEditFields({ ...editFields, carbs: e.target.value === "" ? null : parseInt(e.target.value) || 0 })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-label font-black uppercase tracking-widest text-on-surface-variant ml-1">Fat (g)</label>
+                              <input
+                                type="number"
+                                placeholder="—"
+                                className="w-full bg-background border border-outline-variant/30 rounded-xl px-4 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                                value={editFields.fat ?? ""}
+                                onChange={(e) => setEditFields({ ...editFields, fat: e.target.value === "" ? null : parseInt(e.target.value) || 0 })}
+                              />
+                            </div>
+                          </div>
+
                           <div className="flex gap-2 pt-2">
                             <button 
                               onClick={() => handleSaveEdit(item.id)}
@@ -232,17 +303,32 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
                         
                         <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-primary whitespace-nowrap">
+                            <span className="text-caption font-black uppercase tracking-widest text-primary whitespace-nowrap">
                               {item.time}
                             </span>
                             <span className="w-0.5 h-0.5 rounded-full bg-outline-variant"></span>
-                            <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest truncate">
+                            <span className="text-caption font-bold text-on-surface-variant uppercase tracking-widest truncate">
                               {item.category}
                             </span>
                           </div>
-                          <h3 className="font-headline font-bold text-base sm:text-lg text-on-surface truncate leading-tight">
+                          <h3 className="font-headline font-bold text-body sm:text-title text-on-surface truncate leading-tight">
                             {item.name}
                           </h3>
+                          <div className="flex items-center gap-2 flex-wrap mt-1">
+                            <span className="text-caption text-secondary font-bold uppercase tracking-widest">
+                              {item.protein}g protein
+                            </span>
+                            {item.carbs != null && (
+                              <span className="text-caption text-success font-bold uppercase tracking-widest">
+                                • {item.carbs}g carbs
+                              </span>
+                            )}
+                            {item.fat != null && (
+                              <span className="text-caption text-warning font-bold uppercase tracking-widest">
+                                • {item.fat}g fat
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -250,12 +336,9 @@ export function FoodLog({ foodLog, onDelete, onUpdate }: FoodLogProps) {
                         <div className="flex items-center gap-4">
                           <div className="text-left sm:text-right">
                             <div className="flex items-baseline gap-1 justify-start sm:justify-end">
-                              <span className="font-headline font-black text-lg text-on-surface">{item.calories}</span>
-                              <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">kcal</span>
+                              <span className="font-headline font-black text-title text-on-surface">{item.calories}</span>
+                              <span className="text-caption text-on-surface-variant font-bold uppercase tracking-tighter">kcal</span>
                             </div>
-                            <p className="text-[10px] font-black text-secondary uppercase tracking-widest leading-none">
-                              {item.protein}g protein
-                            </p>
                           </div>
                         </div>
                         

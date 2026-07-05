@@ -5,25 +5,36 @@ import { useUserStore } from "../zustand";
 interface SettingsProps {
   calorieGoal: number;
   proteinGoal: number;
+  carbsGoal: number;
+  fatGoal: number;
   foodLog: FoodItem[];
-  onUpdateGoals: (calories: number, protein: number) => void;
+  onUpdateGoals: (calories: number, protein: number, carbs: number, fat: number) => void;
   onLogout: () => void;
 }
 
-export function Settings({ calorieGoal, proteinGoal, foodLog, onUpdateGoals, onLogout }: SettingsProps) {
+export function Settings({ calorieGoal, proteinGoal, carbsGoal, fatGoal, foodLog, onUpdateGoals, onLogout }: SettingsProps) {
   const user = useUserStore((state) => state.user)
   const [tempCalories, setTempCalories] = useState(calorieGoal.toString());
   const [tempProtein, setTempProtein] = useState(proteinGoal.toString());
+  const [tempCarbs, setTempCarbs] = useState(carbsGoal.toString());
+  const [tempFat, setTempFat] = useState(fatGoal.toString());
 
   // Sync state with props when they change
   React.useEffect(() => {
     setTempCalories(calorieGoal.toString());
     setTempProtein(proteinGoal.toString());
-  }, [calorieGoal, proteinGoal]);
+    setTempCarbs(carbsGoal.toString());
+    setTempFat(fatGoal.toString());
+  }, [calorieGoal, proteinGoal, carbsGoal, fatGoal]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateGoals(parseInt(tempCalories) || 0, parseInt(tempProtein) || 0);
+    onUpdateGoals(
+      parseInt(tempCalories) || 0,
+      parseInt(tempProtein) || 0,
+      parseInt(tempCarbs) || 0,
+      parseInt(tempFat) || 0
+    );
   };
 
   const handleDownloadCSV = () => {
@@ -95,6 +106,36 @@ export function Settings({ calorieGoal, proteinGoal, foodLog, onUpdateGoals, onL
                 value={tempProtein}
                 onChange={(e) => setTempProtein(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
+                Daily Carbs Goal (g)
+              </label>
+              <div className="obsidian-inset rounded-2xl p-1 focus-within:ring-1 focus-within:ring-primary transition-all">
+                <input
+                  type="number"
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface px-4 py-3 font-body text-lg"
+                  value={tempCarbs}
+                  onChange={(e) => setTempCarbs(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
+                Daily Fat Goal (g)
+              </label>
+              <div className="obsidian-inset rounded-2xl p-1 focus-within:ring-1 focus-within:ring-primary transition-all">
+                <input
+                  type="number"
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface px-4 py-3 font-body text-lg"
+                  value={tempFat}
+                  onChange={(e) => setTempFat(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

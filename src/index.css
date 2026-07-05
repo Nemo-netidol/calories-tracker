@@ -1,7 +1,37 @@
 @import "tailwindcss";
+@plugin "daisyui" {
+  themes: white --default, coachdark;
+}
 
-@theme {
-  /* Claude-inspired Dark Palette */
+@plugin "daisyui/theme" {
+  name: "coachdark";
+  default: false;
+  color-scheme: dark;
+
+  --color-base-100: #0a0a0a;
+  --color-base-200: #121212;
+  --color-base-300: #1e1e1e;
+  --color-base-content: #f9f7f2;
+  --color-primary: #d97757;
+  --color-primary-content: #ffffff;
+  --color-secondary: #40b3a2;
+  --color-secondary-content: #ffffff;
+  --color-accent: #40b3a2;
+  --color-accent-content: #ffffff;
+  --color-neutral: #262626;
+  --color-neutral-content: #f9f7f2;
+  --color-info: #40b3a2;
+  --color-info-content: #ffffff;
+  --color-success: #22c55e;
+  --color-success-content: #ffffff;
+  --color-warning: #ca8a04;
+  --color-warning-content: #ffffff;
+  --color-error: #ef4444;
+  --color-error-content: #ffffff;
+
+  /* App-specific tokens (see @theme below) — kept in sync so the
+     theme-controller swap actually repaints the whole app, not just
+     daisyUI's own components. */
   --color-background: #0a0a0a;
   --color-surface: #121212;
   --color-surface-bright: #1a1a1a;
@@ -9,28 +39,111 @@
   --color-surface-container-low: #0f0f0f;
   --color-surface-container-high: #1e1e1e;
   --color-surface-container-highest: #262626;
-
-  /* Claude Orange & Accents */
-  --color-primary: #d97757;
   --color-primary-container: #d97757;
   --color-on-primary: #ffffff;
-  
-  /* Error / Destructive (Vibrant Red) */
-  --color-error: #ef4444;
-  
-  /* Secondary / Protein Accent (Muted Teal/Mint to complement Orange) */
-  --color-secondary: #40b3a2;
   --color-secondary-container: #40b3a2;
-  
-  /* Typography Colors */
   --color-on-surface: #f9f7f2;
   --color-on-surface-variant: #a1a1aa;
   --color-outline: #262626;
   --color-outline-variant: #333333;
+}
+
+@plugin "daisyui/theme" {
+  name: "white";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #f2f1ef;
+  --color-base-300: #ebe9e6;
+  --color-base-content: #1c1a17;
+  --color-primary: #b8481f;
+  --color-primary-content: #ffffff;
+  --color-secondary: #157a6c;
+  --color-secondary-content: #ffffff;
+  --color-accent: #157a6c;
+  --color-accent-content: #ffffff;
+  --color-neutral: #e5e2dd;
+  --color-neutral-content: #1c1a17;
+  --color-info: #157a6c;
+  --color-info-content: #ffffff;
+  --color-success: #15803d;
+  --color-success-content: #ffffff;
+  --color-warning: #a16207;
+  --color-warning-content: #ffffff;
+  --color-error: #dc2626;
+  --color-error-content: #ffffff;
+
+  /* App-specific tokens, re-tuned for 4.5:1 body-text contrast on white
+     (the ember/mint accents are darkened; they stay the same hue family). */
+  --color-background: #ffffff;
+  --color-surface: #f7f7f6;
+  --color-surface-bright: #ffffff;
+  --color-surface-container: #f2f1ef;
+  --color-surface-container-low: #f8f7f5;
+  --color-surface-container-high: #ebe9e6;
+  --color-surface-container-highest: #dedbd7;
+  --color-primary-container: #b8481f;
+  --color-on-primary: #ffffff;
+  --color-secondary-container: #157a6c;
+  --color-on-surface: #1c1a17;
+  --color-on-surface-variant: #5b5750;
+  --color-outline: #e5e2dd;
+  --color-outline-variant: #d3cfc8;
+}
+
+@theme {
+  /* White theme — main/default (see @plugin "daisyui/theme" "white" above,
+     which is the source of truth these mirror so the theme-controller
+     swap actually repaints the whole app on toggle). */
+  --color-background: #ffffff;
+  --color-surface: #f7f7f6;
+  --color-surface-bright: #ffffff;
+  --color-surface-container: #f2f1ef;
+  --color-surface-container-low: #f8f7f5;
+  --color-surface-container-high: #ebe9e6;
+  --color-surface-container-highest: #dedbd7;
+
+  /* Ember & Mint Accents (darkened from the dark-theme values for 4.5:1
+     contrast on white) */
+  --color-primary: #b8481f;
+  --color-primary-container: #b8481f;
+  --color-on-primary: #ffffff;
+
+  /* Error / Destructive (Vibrant Red) */
+  --color-error: #dc2626;
+
+  /* Secondary / Protein Accent (Deep Signal Teal) */
+  --color-secondary: #157a6c;
+  --color-secondary-container: #157a6c;
+
+  /* Typography Colors */
+  --color-on-surface: #1c1a17;
+  --color-on-surface-variant: #5b5750;
+  --color-outline: #e5e2dd;
+  --color-outline-variant: #d3cfc8;
 
   --font-headline: "Manrope", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Inter", sans-serif;
+
+  /* Type scale (fixed rem, product register — see DESIGN.md §3 Typography).
+     Six roles replace the scattered text-[9px]/[10px]/[11px] ad hoc sizing
+     that had near-duplicate values doing the same job in different places. */
+  --text-caption: 0.6875rem;   /* 11px — timestamps, meta, chart legends */
+  --text-label: 0.75rem;       /* 12px — uppercase tracked labels & the one true eyebrow */
+  --text-body-sm: 0.8125rem;   /* 13px — secondary/support copy */
+  --text-body: 1rem;           /* 16px — primary readable content (meal names) */
+  --text-title: 1.125rem;      /* 18px — section & card titles */
+  --text-headline: 1.5rem;     /* 24px — secondary stat headlines (protein number) */
+  --text-display: 2.25rem;     /* 36px — the one hero number per screen, sized to fit the 200px ring */
+
+  /* Semantic z-index scale — replaces the ad hoc z-50/z-[100]/z-[110] that
+     were scattered across Header, BottomNav, Modal, LogFoodSheet, and
+     FoodCardList with no defined relationship to each other. */
+  --z-index-sticky: 30;   /* persistent chrome: Header, BottomNav */
+  --z-index-modal: 50;    /* all overlay dialogs/sheets share one layer */
+  --z-index-toast: 60;    /* toasts always surface above an open modal */
 
   @keyframes shimmer {
     0% { transform: translateX(-100%); }
@@ -54,9 +167,38 @@
 }
 
 .glass-header {
-  background: rgba(10, 10, 10, 0.8);
+  background: color-mix(in oklch, var(--color-background) 80%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-outline);
 }
 
+/* Input well used by Settings/AddFood/Coach — ported from an old prototype
+   (test.html) that never made it into the real stylesheet, so every input
+   using it has been rendering with no background/border at all. Matches
+   DESIGN.md's Input spec: surface-container-high fill, subtle outline. */
+.obsidian-inset {
+  background-color: var(--color-surface-container-high);
+  border: 1px solid var(--color-outline-variant);
+}
+
+/* Visible keyboard focus everywhere — PRODUCT.md requires it, and the
+   default browser outline was the only thing providing it before this. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Respect prefers-reduced-motion globally instead of per-component: kill
+   decorative entrance/hover motion, keep instant state changes. Loading
+   spinners (.animate-spin) are exempt — they convey real async status,
+   not decoration, so freezing them would remove functional information. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin), *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 

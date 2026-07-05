@@ -5,10 +5,11 @@ import { logMeal } from '../services/foodService';
 interface FoodCardListProps {
   initialFoods: FoodItem[];
   onClose: () => void;
+  onLogged: (item: FoodItem) => void;
   title?: string;
 }
 
-export const FoodCardList: React.FC<FoodCardListProps> = ({ initialFoods, onClose, title = "Detected Meals" }) => {
+export const FoodCardList: React.FC<FoodCardListProps> = ({ initialFoods, onClose, onLogged, title = "Detected Meals" }) => {
   const [foods, setFoods] = useState<FoodItem[]>(initialFoods);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [loggedIds, setLoggedIds] = useState<Set<string>>(new Set());
@@ -40,7 +41,8 @@ export const FoodCardList: React.FC<FoodCardListProps> = ({ initialFoods, onClos
         time: food.time || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
-      await logMeal(mealToLog);
+      const savedItem = await logMeal(mealToLog);
+      onLogged(savedItem);
       setLoggedIds(prev => new Set(prev).add(food.id));
     } catch (error) {
       console.error('Failed to log meal:', error);
@@ -51,7 +53,7 @@ export const FoodCardList: React.FC<FoodCardListProps> = ({ initialFoods, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-surface-container-low w-full max-w-2xl max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl border border-outline-variant/20 animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 delay-100 fill-mode-both">
         
         {/* Header */}
@@ -126,8 +128,8 @@ export const FoodCardList: React.FC<FoodCardListProps> = ({ initialFoods, onClos
                         <div className="bg-surface-container-low/50 rounded-2xl p-3 border border-outline-variant/10">
                           <label className="text-[10px] text-outline uppercase font-bold tracking-widest block mb-1">Calories</label>
                           <div className="flex items-baseline gap-1">
-                            <input 
-                              type="number" 
+                            <input
+                              type="number"
                               disabled={isLogged}
                               value={food.calories}
                               onChange={(e) => handleInputChange(food.id, 'calories', parseInt(e.target.value) || 0)}
@@ -136,16 +138,44 @@ export const FoodCardList: React.FC<FoodCardListProps> = ({ initialFoods, onClos
                             <span className="text-xs text-outline-variant">kcal</span>
                           </div>
                         </div>
-                        
+
                         <div className="bg-surface-container-low/50 rounded-2xl p-3 border border-outline-variant/10">
                           <label className="text-[10px] text-outline uppercase font-bold tracking-widest block mb-1">Protein</label>
                           <div className="flex items-baseline gap-1">
-                            <input 
-                              type="number" 
+                            <input
+                              type="number"
                               disabled={isLogged}
                               value={food.protein}
                               onChange={(e) => handleInputChange(food.id, 'protein', parseInt(e.target.value) || 0)}
                               className="bg-transparent w-full text-xl font-headline font-bold text-secondary focus:outline-none disabled:text-outline-variant"
+                            />
+                            <span className="text-xs text-outline-variant">g</span>
+                          </div>
+                        </div>
+
+                        <div className="bg-surface-container-low/50 rounded-2xl p-3 border border-outline-variant/10">
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-widest block mb-1">Carbs</label>
+                          <div className="flex items-baseline gap-1">
+                            <input
+                              type="number"
+                              disabled={isLogged}
+                              value={food.carbs ?? 0}
+                              onChange={(e) => handleInputChange(food.id, 'carbs', parseInt(e.target.value) || 0)}
+                              className="bg-transparent w-full text-xl font-headline font-bold text-success focus:outline-none disabled:text-outline-variant"
+                            />
+                            <span className="text-xs text-outline-variant">g</span>
+                          </div>
+                        </div>
+
+                        <div className="bg-surface-container-low/50 rounded-2xl p-3 border border-outline-variant/10">
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-widest block mb-1">Fat</label>
+                          <div className="flex items-baseline gap-1">
+                            <input
+                              type="number"
+                              disabled={isLogged}
+                              value={food.fat ?? 0}
+                              onChange={(e) => handleInputChange(food.id, 'fat', parseInt(e.target.value) || 0)}
+                              className="bg-transparent w-full text-xl font-headline font-bold text-warning focus:outline-none disabled:text-outline-variant"
                             />
                             <span className="text-xs text-outline-variant">g</span>
                           </div>
@@ -160,7 +190,7 @@ export const FoodCardList: React.FC<FoodCardListProps> = ({ initialFoods, onClos
                             ? 'bg-secondary/20 text-secondary border border-secondary/30 cursor-default' 
                             : isLoading
                               ? 'bg-outline-variant/20 text-outline'
-                              : 'bg-primary text-on-primary-container hover:shadow-lg hover:shadow-primary/10'
+                              : 'bg-primary text-on-primary hover:shadow-lg hover:shadow-primary/10'
                         }`}
                       >
                         {isLoading ? (

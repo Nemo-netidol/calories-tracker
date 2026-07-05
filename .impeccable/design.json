@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-05T00:00:00.000Z",
+  "title": "Design System: Calories Tracker",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Ember Orange", "canonical": "#d97757", "tonalRamp": ["#2e150d", "#4a2115", "#6d301d", "#96432a", "#d97757", "#e2916f", "#eeb59b", "#f8dbc8"] },
+      "secondary": { "role": "secondary", "displayName": "Signal Mint", "canonical": "#40b3a2", "tonalRamp": ["#0a2623", "#123d38", "#1c5850", "#2a7d70", "#40b3a2", "#6ec3b6", "#9cd6cc", "#cceae5"] },
+      "error": { "role": "error", "displayName": "Alert Red", "canonical": "#ef4444", "tonalRamp": ["#2d0a0a", "#4a1212", "#711c1c", "#a32b2b", "#ef4444", "#f27a7a", "#f7aeae", "#fbd7d7"] },
+      "warning": { "role": "tertiary", "displayName": "Coach Amber", "canonical": "#ca8a04", "tonalRamp": ["#2b2001", "#453402", "#664e03", "#98730a", "#ca8a04", "#e0ab3e", "#eecb82", "#f8e6bd"] },
+      "background": { "role": "neutral", "displayName": "True Black Background", "canonical": "#0a0a0a", "tonalRamp": ["#000000", "#0a0a0a", "#121212", "#161616", "#1a1a1a", "#1e1e1e", "#262626", "#333333"] },
+      "on-surface": { "role": "neutral", "displayName": "Warm Off-White", "canonical": "#f9f7f2", "tonalRamp": ["#a1a1aa", "#c4c4c8", "#d8d8d4", "#e8e6df", "#f9f7f2", "#fbfaf7", "#fdfcfb", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "The single hero number or word per screen (calories remaining, modal titles)." },
+      "title": { "displayName": "Title", "purpose": "Page and card-level headings." },
+      "body": { "displayName": "Body", "purpose": "Descriptions, meal names, supporting copy." },
+      "label": { "displayName": "Label", "purpose": "Uppercase eyebrows, stat captions, nav labels." }
+    },
+    "shadows": [
+      { "name": "structural-separation", "value": "0 -1px 10px rgba(0,0,0,0.5)", "purpose": "Separates fixed header/bottom nav from scrolling content." },
+      { "name": "modal-lift", "value": "0 20px 25px rgba(0,0,0,0.15)", "purpose": "Lifts modals and sheets above the blurred backdrop." },
+      { "name": "reward-glow-mint", "value": "0 0 8px rgba(64,179,162,0.3)", "purpose": "Earned glow on the protein progress fill only." },
+      { "name": "reward-glow-primary", "value": "0 10px 25px rgba(217,119,87,0.2)", "purpose": "Glow under primary/CTA buttons (shadow-primary/20)." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default transition easing (Tailwind's transition-all)." },
+      { "name": "duration-press", "value": "150ms", "purpose": "active:scale press feedback on buttons and nav icons." },
+      { "name": "duration-progress", "value": "1000ms", "purpose": "Calorie ring and protein bar fill animations, eased out." },
+      { "name": "duration-reveal", "value": "700ms", "purpose": "Dashboard/section fade-in + slide-in-from-bottom on mount." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Solid ember-orange CTA with reward glow and press feedback.",
+      "html": "<button class=\"ds-btn-primary\"><span>Unlock Dashboard</span></button>",
+      "css": ".ds-btn-primary { background: #d97757; color: #ffffff; padding: 20px 24px; border-radius: 24px; font-family: Manrope, sans-serif; font-weight: 700; font-size: 1.125rem; border: none; box-shadow: 0 10px 25px rgba(217,119,87,0.2); transition: filter 150ms cubic-bezier(0.4,0,0.2,1), transform 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { filter: brightness(1.1); } .ds-btn-primary:active { transform: scale(0.95); } .ds-btn-primary:focus-visible { outline: 2px solid #f8dbc8; outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Solid alert-red action for destructive confirmations only.",
+      "html": "<button class=\"ds-btn-danger\">Delete Entry</button>",
+      "css": ".ds-btn-danger { background: #ef4444; color: #ffffff; padding: 16px 24px; border-radius: 16px; font-family: Manrope, sans-serif; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.2em; text-transform: uppercase; border: none; box-shadow: 0 10px 25px rgba(239,68,68,0.2); transition: filter 150ms cubic-bezier(0.4,0,0.2,1), transform 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-danger:hover { filter: brightness(1.1); } .ds-btn-danger:active { transform: scale(0.95); }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Default tonal card used for dashboard sections and list rows.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-label\">Protein Intake</p><p class=\"ds-card-value\">86<span>/150g</span></p></div>",
+      "css": ".ds-card { background: #161616; border: 1px solid #262626; border-radius: 24px; padding: 24px; } .ds-card-label { font-family: Inter, sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #a1a1aa; margin: 0 0 4px; } .ds-card-value { font-family: Manrope, sans-serif; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.03em; color: #40b3a2; margin: 0; } .ds-card-value span { font-size: 10px; font-weight: 700; color: #a1a1aa; letter-spacing: normal; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Pill-wrapped password/text field with border-only focus signal.",
+      "html": "<div class=\"ds-input-wrap\"><input class=\"ds-input\" type=\"password\" placeholder=\"••••••••\" /></div>",
+      "css": ".ds-input-wrap { background: #1e1e1e; border: 2px solid rgba(51,51,51,0.2); border-radius: 24px; padding: 4px; transition: border-color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-input-wrap:focus-within { border-color: #d97757; } .ds-input { width: 100%; background: transparent; border: none; outline: none; color: #f9f7f2; font-family: Manrope, sans-serif; font-size: 1.25rem; letter-spacing: 0.2em; padding: 16px 20px; }"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "bottom-nav",
+      "description": "Fixed four-item bottom nav with a centered floating add button.",
+      "html": "<nav class=\"ds-bottom-nav\"><button class=\"ds-nav-item ds-nav-item--active\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M4 13h6V4H4v9zm0 7h6v-5H4v5zm8 0h6v-9h-6v9zm0-16v5h6V4h-6z\"/></svg><span>Home</span></button><button class=\"ds-fab\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button><button class=\"ds-nav-item\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z\"/></svg><span>Settings</span></button></nav>",
+      "css": ".ds-bottom-nav { display: flex; justify-content: space-between; align-items: center; background: #121212; border-top: 1px solid #262626; box-shadow: 0 -1px 10px rgba(0,0,0,0.5); padding: 12px 8px 32px; } .ds-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #a1a1aa; font-family: Manrope, sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; transition: color 150ms cubic-bezier(0.4,0,0.2,1), transform 150ms cubic-bezier(0.4,0,0.2,1); } .ds-nav-item--active { color: #d97757; } .ds-nav-item:active { transform: scale(0.9); } .ds-fab { width: 48px; height: 48px; border-radius: 9999px; background: #d97757; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(217,119,87,0.2); transition: filter 150ms cubic-bezier(0.4,0,0.2,1), transform 150ms cubic-bezier(0.4,0,0.2,1); } .ds-fab:hover { filter: brightness(1.1); } .ds-fab:active { transform: scale(0.95); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Night Coach",
+    "overview": "The app is a dark, low-glare instrument you check between bites: near-black surfaces that recede, so the two accent hues — ember orange and mint teal — carry all the meaning. It reads energetic and motivating rather than clinical: numbers count down with weight (font-black, tight tracking), progress rings animate with real ease, and quick-log actions resolve with a visible, colored success state. This is a coach in your pocket, not a spreadsheet.\n\nThe system explicitly rejects the generic SaaS/AI look: no cream or beige surfaces, no gradient text, no identical icon-card grids, no tiny uppercase eyebrows stacked above every section. It also rejects gamified fitness-app kitsch — no badges, no streak decoration, no mascots — and rejects dense enterprise analytics: this is a single-user daily-glance tool, so one hero number always leads.",
+    "keyCharacteristics": [
+      "Near-black tonal surfaces (background → surface → surface-bright) carry depth; color is reserved for meaning, not decoration.",
+      "Ember orange (#d97757) = calories/primary action. Mint teal (#40b3a2) = protein/secondary metric. The two never swap roles.",
+      "Headline numbers are heavy and tight (font-black, negative tracking) — the app's most-viewed digits get the most visual weight.",
+      "Uppercase, widely-tracked micro-labels (9-10px) caption every stat; body copy stays sentence case."
+    ],
+    "rules": [
+      { "name": "The Two-Accent Rule", "body": "Only two saturated hues exist in this system: ember orange for calories, mint teal for protein. Any new metric gets a neutral treatment before a third accent color is even considered.", "section": "colors" },
+      { "name": "The Error Is Red Rule", "body": "#ef4444 is reserved exclusively for destructive actions (delete confirmations and their icons). It never doubles as a generic accent, and no longer covers the over-goal ring.", "section": "colors" },
+      { "name": "The Coach, Not Cop Rule", "body": "Going over a calorie goal is a nudge, not a violation: the ring switches to Coach Amber (#ca8a04), never destructive red. Red is reserved for the one place data actually gets destroyed.", "section": "colors" },
+      { "name": "The One Hero Rule", "body": "Exactly one number per screen renders at Headline weight and size. Every other stat is Body or Label.", "section": "typography" },
+      { "name": "The Earned Glow Rule", "body": "Colored glow only appears on things currently succeeding or asking for action — never as ambient card decoration. If nothing is being celebrated, the surface stays flat.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep exactly two accent hues — ember orange for calories, mint teal for protein — and route any new metric through neutral tones first.",
+      "Do lead every screen with one Headline-weight number; everything else is Body or Label.",
+      "Do reserve colored glow/shadow for things currently succeeding — never as ambient card decoration.",
+      "Do use large, progressive corner radii (16–40px) and firm active:scale-95 press feedback so the UI feels tactile and confident.",
+      "Do respect prefers-reduced-motion on every animated element and maintain 4.5:1 text contrast against #0a0a0a/#121212."
+    ],
+    "donts": [
+      "Don't introduce cream, beige, or any light warm-neutral body background — this system is true-black-anchored, full stop.",
+      "Don't use gradient text, tiny uppercase eyebrows stacked above every section, or identical icon-card grids.",
+      "Don't add badges, streaks-as-decoration, or mascot illustrations.",
+      "Don't pair a 1px border with a soft wide (≥16px blur) drop shadow on the same element.",
+      "Don't let a third saturated accent color creep in for a new metric or feature; extend the neutral ramp instead.",
+      "Don't signal over-goal/under-goal with color alone — always pair with an icon or text label."
+    ]
+  }
+}

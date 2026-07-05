@@ -4,53 +4,28 @@ import type { View, FoodItem, Message, User } from "./types";
 import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
 import { Dashboard } from "./components/Dashboard";
-import { FoodLog } from "./components/FoodLog";
+import { MealDiary } from "./components/MealDiary";
 import { AddFood } from "./components/AddFood";
 import { Coach } from "./components/Coach";
 import { TrendDashboard } from "./components/TrendDashboard";
 import { Settings } from "./components/Settings";
 import { FoodCardList } from "./components/FoodCardList";
+import { LogFoodSheet } from "./components/LogFoodSheet";
 import { Login } from "./components/Login";
-import { GoogleGenAI } from '@google/genai';
+import { getAIResponse, getAIResponseFromImage, parseFoodItemsFromAIResponse, normalizeCategory } from "./services/aiService";
 import { getFoodLog, deleteFood, updateFood, checkAuth, loginUser, logoutUser, logMeal } from "./services/foodService";
 import { getUser, updateUserTargets } from "./services/userService";
 import { useUserStore } from "./zustand";
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
-
-async function getAIResponse(prompt: string) {
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction: `You are a nutrition expert. Today is ${new Date().toLocaleDateString()}. Your task is to read the user's message and extract the food items they consumed and give me the calories and protein content of each item. Respond with a JSON array of food items in the format: [{ "name": "Food Name", "calories": 0, "protein": 0, "category": "Category", "date": "YYYY-MM-DD", "time": "HH:MM AM/PM" }]. Do not include any other text.`,
-        responseSchema: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              calories: { type: "number" },
-              protein: { type: "number" },
-              category: { type: "string" },
-              date: { type: "string" },
-              time: { type: "string" }
-            },
-            required: ["name", "calories", "protein", "category"]
-          }
-        },
-        responseMimeType: "application/json"
-      }
-    });
-    return response.text;
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    return "Error communicating with AI Assistant.";
-  }
-}
-
 const getTodayISO = () => new Date().toISOString().split("T")[0];
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const INITIAL_MESSAGES: Message[] = [
   {
@@ -69,11 +44,24 @@ export function App() {
 
   const [view, setView] = useState<View>("dashboard");
   const [foodLog, setFoodLog] = useState<FoodItem[]>([]);
+  const [selectedDate, setSelectedDate] = useState(getTodayISO());
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [detectedFoods, setDetectedFoods] = useState<FoodItem[]>([]);
   const [showDetectionModal, setShowDetectionModal] = useState(false);
+  const [presetCategory, setPresetCategory] = useState<FoodItem["category"] | undefined>(undefined);
+  const [showLogSheet, setShowLogSheet] = useState(false);
+  const [logSheetCategory, setLogSheetCategory] = useState<FoodItem["category"] | undefined>(undefined);
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ item: FoodItem; timeoutId: ReturnType<typeof setTimeout> } | null>(null);
   const setUser = useUserStore((state) => state.setUser);
   const user = useUserStore((state) => state.user)
+
+  // Clear any in-flight undo timer if the app unmounts mid-window.
+  useEffect(() => {
+    return () => {
+      if (pendingDelete) clearTimeout(pendingDelete.timeoutId);
+    };
+  }, [pendingDelete]);
 
   // Check auth on mount
   useEffect(() => {
@@ -187,6 +175,8 @@ export function App() {
   const todayItems = foodLog.filter((item) => item.date === todayISO);
   const totalCalories = todayItems.reduce((sum, item) => sum + item.calories, 0);
   const totalProtein = todayItems.reduce((sum, item) => sum + item.protein, 0);
+  const totalCarbs = todayItems.reduce((sum, item) => sum + (item.carbs ?? 0), 0);
+  const totalFat = todayItems.reduce((sum, item) => sum + (item.fat ?? 0), 0);
 
   const calculateWeeklyData = () => {
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -223,7 +213,8 @@ export function App() {
     try {
       const savedItem = await logMeal(newItem);
       setFoodLog(prev => [savedItem, ...prev]);
-      setView("log");
+      setPresetCategory(undefined);
+      setView("diary");
     } catch (err) {
       console.error("Failed to add food:", err);
       alert("Failed to save food log entry.");
@@ -240,14 +231,44 @@ export function App() {
     }
   };
 
-  const handleDeleteFood = async (id: string) => {
-    try {
-      await deleteFood(id);
-      setFoodLog(prev => prev.filter(item => item.id !== id));
-    } catch (err) {
-      console.error("Failed to delete food:", err);
-      alert("Failed to delete food log entry.");
-    }
+  const handleDeleteFood = (id: string) => {
+    const item = foodLog.find((f) => f.id === id);
+    if (!item) return;
+
+    // Optimistically hide it immediately; the actual delete only commits
+    // after the undo window closes, so a mis-tap is always recoverable.
+    setFoodLog((prev) => prev.filter((f) => f.id !== id));
+
+    setPendingDelete((current) => {
+      if (current) {
+        clearTimeout(current.timeoutId);
+        deleteFood(current.item.id).catch((err) =>
+          console.error("Failed to delete food:", err)
+        );
+      }
+
+      const timeoutId = setTimeout(async () => {
+        try {
+          await deleteFood(id);
+        } catch (err) {
+          console.error("Failed to delete food:", err);
+          setFoodLog((prev) => [item, ...prev]);
+        } finally {
+          setPendingDelete((c) => (c?.item.id === id ? null : c));
+        }
+      }, 5000);
+
+      return { item, timeoutId };
+    });
+  };
+
+  const handleUndoDelete = () => {
+    setPendingDelete((current) => {
+      if (!current) return null;
+      clearTimeout(current.timeoutId);
+      setFoodLog((prev) => [current.item, ...prev]);
+      return null;
+    });
   };
 
   const handleUpdateFood = async (id: string, updates: Partial<FoodItem>) => {
@@ -257,6 +278,51 @@ export function App() {
     } catch (err) {
       console.error("Failed to update food:", err);
       alert("Failed to update food log entry.");
+    }
+  };
+
+  const openLogSheet = (category?: FoodItem["category"]) => {
+    setLogSheetCategory(category);
+    setShowLogSheet(true);
+  };
+
+  const handleManualEntry = () => {
+    setPresetCategory(logSheetCategory);
+    setShowLogSheet(false);
+    setView("add");
+  };
+
+  const handlePhotoCapture = async (file: File) => {
+    setIsAnalyzingPhoto(true);
+    try {
+      const base64Data = await fileToBase64(file);
+      const responseText = await getAIResponseFromImage(base64Data, file.type);
+      const foodItems = responseText ? parseFoodItemsFromAIResponse(responseText) : null;
+
+      if (!foodItems || foodItems.length === 0) {
+        alert("Couldn't detect any food in that photo. Try another angle or fill it in manually.");
+        return;
+      }
+
+      const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      setDetectedFoods(foodItems.map((item: any, idx: number) => ({
+        id: item.id || `detected-${Date.now()}-${idx}`,
+        name: item.name || "Unknown Food",
+        calories: parseInt(item.calories) || 0,
+        protein: parseInt(item.protein) || 0,
+        carbs: item.carbs != null ? parseInt(item.carbs) || 0 : null,
+        fat: item.fat != null ? parseInt(item.fat) || 0 : null,
+        category: logSheetCategory || normalizeCategory(item.category),
+        date: selectedDate,
+        time: currentTime,
+      })) as FoodItem[]);
+      setShowDetectionModal(true);
+      setShowLogSheet(false);
+    } catch (err) {
+      console.error("Failed to analyze photo:", err);
+      alert("Failed to analyze photo. Please try again or fill it in manually.");
+    } finally {
+      setIsAnalyzingPhoto(false);
     }
   };
 
@@ -281,48 +347,21 @@ export function App() {
       setMessages((prev) => [...prev, AIMsg]);
 
       if (responseText) {
-        try {
-          const parsed = JSON.parse(responseText.trim());
-          const foodItems = Array.isArray(parsed) ? parsed : [parsed];
-          
-          if (foodItems.length > 0) {
-            const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-            setDetectedFoods(foodItems.map((item: any, idx: number) => ({
-              id: item.id || `detected-${Date.now()}-${idx}`,
-              name: item.name || "Unknown Food",
-              calories: parseInt(item.calories) || 0,
-              protein: parseInt(item.protein) || 0,
-              category: item.category || "Snack",
-              date: getTodayISO(),
-              time: currentTime
-            })) as FoodItem[]);
-            setShowDetectionModal(true);
-          }
-        } catch (e) {
-          console.log("Response text was not pure JSON, trying regex fallback...");
-          const jsonMatch = responseText.match(/\[\s*\{.*\}\s*\]/s) || responseText.match(/\{\s*".*\}\s*/s);
-          if (jsonMatch) {
-            try {
-              const rawJson = jsonMatch[0].replace(/```json|```/g, '').trim();
-              const parsed = JSON.parse(rawJson);
-              const foodItems = Array.isArray(parsed) ? parsed : [parsed];
-              if (foodItems.length > 0) {
-                const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                setDetectedFoods(foodItems.map((item: any, idx: number) => ({
-                  id: item.id || `detected-${Date.now()}-${idx}`,
-                  name: item.name || "Unknown Food",
-                  calories: parseInt(item.calories) || 0,
-                  protein: parseInt(item.protein) || 0,
-                  category: item.category || "Snack",
-                  date: getTodayISO(),
-                  time: currentTime
-                })) as FoodItem[]);
-                setShowDetectionModal(true);
-              }
-            } catch (innerE) {
-              console.error("Failed to parse JSON from AI response:", innerE);
-            }
-          }
+        const foodItems = parseFoodItemsFromAIResponse(responseText);
+        if (foodItems && foodItems.length > 0) {
+          const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          setDetectedFoods(foodItems.map((item: any, idx: number) => ({
+            id: item.id || `detected-${Date.now()}-${idx}`,
+            name: item.name || "Unknown Food",
+            calories: parseInt(item.calories) || 0,
+            protein: parseInt(item.protein) || 0,
+            carbs: item.carbs != null ? parseInt(item.carbs) || 0 : null,
+            fat: item.fat != null ? parseInt(item.fat) || 0 : null,
+            category: normalizeCategory(item.category),
+            date: getTodayISO(),
+            time: currentTime
+          })) as FoodItem[]);
+          setShowDetectionModal(true);
         }
       }
     } catch (error) {
@@ -330,11 +369,13 @@ export function App() {
     }
   };
 
-  const handleUpdateGoals = async (calories: number, protein: number) => {
+  const handleUpdateGoals = async (calories: number, protein: number, carbs: number, fat: number) => {
     try {
-      const updatedUser = await updateUserTargets({ 
-        target_calories: calories, 
-        target_protein: protein 
+      const updatedUser = await updateUserTargets({
+        target_calories: calories,
+        target_protein: protein,
+        target_carbs: carbs,
+        target_fat: fat,
       });
       setUser(updatedUser);
       setView("dashboard");
@@ -355,19 +396,48 @@ export function App() {
             calorieGoal={user.target_calories}
             totalProtein={totalProtein}
             proteinGoal={user.target_protein}
+            totalCarbs={totalCarbs}
+            carbsGoal={user.target_carbs}
+            totalFat={totalFat}
+            fatGoal={user.target_fat}
             recentMeals={todayItems.slice(0, 3)}
             weeklyData={calculateWeeklyData()}
             onQuickLog={handleQuickLog}
+            foodLog={foodLog}
+            onDeleteFood={handleDeleteFood}
+            onUpdateFood={handleUpdateFood}
+            onViewLog={() => setView("diary")}
           />
         )}
-        {view === "log" && <FoodLog foodLog={foodLog} onDelete={handleDeleteFood} onUpdate={handleUpdateFood} />}
+        {view === "diary" && (
+          <MealDiary
+            foodLog={foodLog}
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+            onDelete={handleDeleteFood}
+            onUpdate={handleUpdateFood}
+            onAddFood={(category) => openLogSheet(category)}
+          />
+        )}
 
-        {view === "add" && <AddFood onSave={handleAddFood} onCancel={() => setView("dashboard")} />}
+        {view === "add" && (
+          <AddFood
+            onSave={handleAddFood}
+            onCancel={() => {
+              setPresetCategory(undefined);
+              setView("dashboard");
+            }}
+            initialCategory={presetCategory}
+            initialDate={selectedDate}
+          />
+        )}
         {view === "coach" && <TrendDashboard foodLog={foodLog} />}
         {view === "settings" && (
           <Settings
             calorieGoal={user.target_calories}
             proteinGoal={user.target_protein}
+            carbsGoal={user.target_carbs}
+            fatGoal={user.target_fat}
             foodLog={foodLog}
             onUpdateGoals={handleUpdateGoals}
             onLogout={handleLogout}
@@ -375,12 +445,37 @@ export function App() {
         )}
       </main>
 
-      <BottomNav activeView={view} setView={setView} />
-      
+      {pendingDelete && (
+        <div className="fixed inset-x-0 bottom-24 z-toast flex justify-center px-6 pointer-events-none" role="status">
+          <div className="pointer-events-auto flex items-center gap-4 max-w-full bg-surface-container-highest border border-outline rounded-2xl pl-5 pr-3 py-3 shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <span className="text-body-sm text-on-surface font-medium truncate">
+              "{pendingDelete.item.name}" removed
+            </span>
+            <button
+              onClick={handleUndoDelete}
+              className="shrink-0 text-label font-bold text-primary uppercase tracking-widest hover:opacity-70 transition-opacity cursor-pointer px-2 py-1"
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+      )}
+
+      <BottomNav activeView={view} setView={setView} onLogFoodClick={() => openLogSheet()} />
+
+      <LogFoodSheet
+        isOpen={showLogSheet}
+        onClose={() => setShowLogSheet(false)}
+        onManual={handleManualEntry}
+        onImageSelected={handlePhotoCapture}
+        isProcessing={isAnalyzingPhoto}
+      />
+
       {showDetectionModal && (
-        <FoodCardList 
-          initialFoods={detectedFoods} 
-          onClose={() => setShowDetectionModal(false)} 
+        <FoodCardList
+          initialFoods={detectedFoods}
+          onClose={() => setShowDetectionModal(false)}
+          onLogged={(item) => setFoodLog(prev => [item, ...prev])}
           title="AI Food Detection"
         />
       )}

@@ -4,18 +4,19 @@ import type { View } from "../types";
 interface BottomNavProps {
   activeView: View;
   setView: (v: View) => void;
+  onLogFoodClick: () => void;
 }
 
-export function BottomNav({ activeView, setView }: BottomNavProps) {
+export function BottomNav({ activeView, setView, onLogFoodClick }: BottomNavProps) {
   const items: { id: View; label: string; icon: string }[] = [
     { id: "dashboard", label: "Home", icon: "dashboard" },
-    { id: "log", label: "Log", icon: "description" },
+    { id: "diary", label: "diary", icon: "description" },
     { id: "coach", label: "Trends", icon: "insights" },
     { id: "settings", label: "Settings", icon: "settings" },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center pt-3 pb-8 px-2 bg-surface border-t border-outline shadow-[0_-1px_10px_rgba(0,0,0,0.5)]">
+    <nav className="fixed bottom-0 left-0 w-full z-sticky flex justify-between items-center pt-3 pb-8 px-2 bg-surface border-t border-outline shadow-[0_-1px_10px_rgba(0,0,0,0.5)]">
       {items.slice(0, 2).map((item) => (
         <div key={item.id} className="flex-1 flex justify-center">
           <button
@@ -34,7 +35,7 @@ export function BottomNav({ activeView, setView }: BottomNavProps) {
 
       <div className="flex-1 flex justify-center">
         <button
-          onClick={() => setView("add")}
+          onClick={onLogFoodClick}
           className="w-12 h-12 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all shadow-primary/10 hover:brightness-110"
         >
           <span className="material-symbols-outlined text-2xl font-bold">add</span>

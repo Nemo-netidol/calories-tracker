@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -21,12 +21,34 @@ export function Modal({
   cancelText = "Cancel",
   type = "info",
 }: ModalProps) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Focus the safe action by default so Enter never confirms a
+    // destructive choice by accident.
+    cancelRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+    <div
+      className="fixed inset-0 z-modal flex items-center justify-center p-6 animate-in fade-in duration-300"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      aria-describedby="modal-message"
+    >
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={onClose}
       ></div>
@@ -39,11 +61,11 @@ export function Modal({
               <span className="material-symbols-outlined text-3xl text-error">delete_forever</span>
             </div>
           )}
-          
-          <h3 className="font-headline text-2xl font-black text-on-surface tracking-tighter mb-2">
+
+          <h3 id="modal-title" className="font-headline text-2xl font-black text-on-surface tracking-tighter mb-2">
             {title}
           </h3>
-          <p className="text-on-surface-variant text-sm font-medium leading-relaxed mb-8">
+          <p id="modal-message" className="text-on-surface-variant text-sm font-medium leading-relaxed mb-8">
             {message}
           </p>
 
@@ -51,14 +73,15 @@ export function Modal({
             <button
               onClick={onConfirm}
               className={`w-full py-4 rounded-2xl font-headline font-bold text-sm tracking-widest uppercase transition-all active:scale-95 ${
-                type === "danger" 
-                ? "bg-error text-white shadow-lg shadow-error/20 hover:brightness-110" 
+                type === "danger"
+                ? "bg-error text-white shadow-lg shadow-error/20 hover:brightness-110"
                 : "bg-primary text-on-primary shadow-lg shadow-primary/20 hover:brightness-110"
               }`}
             >
               {confirmText}
             </button>
             <button
+              ref={cancelRef}
               onClick={onClose}
               className="w-full py-4 rounded-2xl font-headline font-bold text-sm tracking-widest uppercase text-on-surface-variant hover:text-on-surface transition-colors"
             >

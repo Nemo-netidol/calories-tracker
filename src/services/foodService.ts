@@ -11,8 +11,3 @@ export const updateFood = (id: string, updates: any) => patch(`/foods/${id}`, up
 export const loginUser = (password: string) => post('/auth/login', { password })
 export const checkAuth = () => get('/auth/check')
 export const logoutUser = () => post('/auth/logout', {})
-
-export const test = async () => {
-  const res = await get('/')
-  console.log('API Test:', res)
-}
