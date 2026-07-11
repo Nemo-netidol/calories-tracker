@@ -34,7 +34,7 @@ export async function getAIResponse(prompt: string) {
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
-        systemInstruction: `You are a nutrition expert. Today is ${new Date().toLocaleDateString()}. Your task is to read the user's message and extract the food items they consumed and give me the calories, protein, carbs, and fat content of each item. Respond with a JSON array of food items in the format: [{ "name": "Food Name", "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "category": "Category", "date": "YYYY-MM-DD", "time": "HH:MM AM/PM" }]. Do not include any other text.`,
+        systemInstruction: `You are a nutrition expert. Today is ${new Date().toLocaleDateString()}. Your task is to read the user's message and extract the food items they consumed and give me the calories, protein, carbs, and fat content of each item. Respond with a JSON array of food items in the format: [{ "name": "Food Name", "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "category": "Category", "date": "YYYY-MM-DD", "time": "HH:MM AM/PM" }]. Do not include any other text. There are only any menu including pork so don't calculate pork menu and return food name in Thai language`,
         responseSchema: FOOD_RESPONSE_SCHEMA,
         responseMimeType: "application/json"
       }
