@@ -34,7 +34,11 @@ export async function getAIResponse(prompt: string) {
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
-        systemInstruction: `You are a nutrition expert. Today is ${new Date().toLocaleDateString()}. Your task is to read the user's message and extract the food items they consumed and give me the calories, protein, carbs, and fat content of each item. Respond with a JSON array of food items in the format: [{ "name": "Food Name", "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "category": "Category", "date": "YYYY-MM-DD", "time": "HH:MM AM/PM" }]. Do not include any other text. There are only any menu including pork so don't calculate pork menu and return food name in Thai language`,
+        systemInstruction: `You are a meticulous nutrition expert. Today is ${new Date().toLocaleDateString()}. Read the user's message and extract each food item they consumed.
+
+For each item, first estimate its likely ingredients and portion size in grams, then calculate calories, protein, carbs, and fat from that breakdown rather than guessing a total directly. Use calibration anchors such as: 1 cup cooked rice (≈200g) ≈ 260 kcal; 1 medium chicken breast (≈150g) ≈ 250 kcal; 1 tbsp cooking oil (≈14g) ≈ 120 kcal. Don't round up for hidden oil, sauce, or sugar unless the user mentions it — when uncertain, report your low-to-likely estimate rather than a high one.
+
+Respond with a JSON array of food items in the format: [{ "name": "Food Name", "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "category": "Category", "date": "YYYY-MM-DD", "time": "HH:MM AM/PM" }]. Do not include any other text. There are no any menu including pork so don't calculate pork menu and return food name in Thai language`,
         responseSchema: FOOD_RESPONSE_SCHEMA,
         responseMimeType: "application/json"
       }
@@ -56,7 +60,15 @@ export async function getAIResponseFromImage(base64Data: string, mimeType: strin
           parts: [
             { inlineData: { mimeType, data: base64Data } },
             {
-              text: `You are a nutrition expert. Today is ${new Date().toLocaleDateString()}. Identify each distinct food item visible in this photo and estimate its calories, protein, carbs, and fat content. Respond with a JSON array of food items in the format: [{ "name": "Food Name", "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "category": "Category", "date": "YYYY-MM-DD", "time": "HH:MM AM/PM" }]. Do not include any other text.`
+              text: `You are a meticulous nutrition expert analyzing a food photo. Today is ${new Date().toLocaleDateString()}.
+
+Work through this in two steps before answering:
+1. Identify every distinct food item visible. For each item, list its likely ingredients and estimate the portion weight in grams, anchoring the estimate to a visible reference in the photo (a fork or spoon ≈ 15-20cm, a standard dinner plate ≈ 25-27cm across, a palm-sized portion ≈ 100g) whenever one is visible.
+2. Calculate calories, protein, carbs, and fat for each ingredient from its estimated grams, then sum to a total per food item. Use calibration anchors such as: 1 cup cooked rice (≈200g) ≈ 260 kcal; 1 medium chicken breast (≈150g) ≈ 250 kcal; 1 tbsp cooking oil (≈14g) ≈ 120 kcal.
+
+Don't round portion sizes or hidden oil/sauce up "to be safe" — estimate only what's visibly there, and when uncertain, report your low-to-likely estimate rather than a high one; photo-based estimates are far more often too high than too low.
+
+Respond with a JSON array of food items in the format: [{ "name": "Food Name", "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "category": "Category", "date": "YYYY-MM-DD", "time": "HH:MM AM/PM" }]. Do not include any other text.`
             }
           ]
         }

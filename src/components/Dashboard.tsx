@@ -116,8 +116,8 @@ export function Dashboard({
     const suffix = scoops === 1 ? '1' : '1.5';
     setLoggingState(`logging-${suffix}` as any);
 
-    const protein = scoops === 1 ? 25 : 38;
-    const calories = scoops === 1 ? 130 : 195;
+    const protein = scoops === 1 ? 25 : 37.5;
+    const calories = scoops === 1 ? 150 : 225;
     const name = `Protein Shake (${scoops} Scoop${scoops > 1 ? 's' : ''})`;
     const todayISO = new Date().toISOString().slice(0, 10);
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
