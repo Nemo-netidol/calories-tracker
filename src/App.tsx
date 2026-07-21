@@ -11,6 +11,7 @@ import { TrendDashboard } from "./components/TrendDashboard";
 import { Settings } from "./components/Settings";
 import { FoodCardList } from "./components/FoodCardList";
 import { LogFoodSheet } from "./components/LogFoodSheet";
+import { ChatLogSheet } from "./components/ChatLogSheet";
 import { Login } from "./components/Login";
 import { getAIResponse, getAIResponseFromImage, parseFoodItemsFromAIResponse, normalizeCategory } from "./services/aiService";
 import { getFoodLog, deleteFood, updateFood, checkAuth, loginUser, logoutUser, logMeal } from "./services/foodService";
@@ -52,6 +53,8 @@ export function App() {
   const [showLogSheet, setShowLogSheet] = useState(false);
   const [logSheetCategory, setLogSheetCategory] = useState<FoodItem["category"] | undefined>(undefined);
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
+  const [showChatSheet, setShowChatSheet] = useState(false);
+  const [isChatSending, setIsChatSending] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ item: FoodItem; timeoutId: ReturnType<typeof setTimeout> } | null>(null);
   const setUser = useUserStore((state) => state.setUser);
   const user = useUserStore((state) => state.user)
@@ -292,6 +295,11 @@ export function App() {
     setView("add");
   };
 
+  const handleOpenChat = () => {
+    setShowLogSheet(false);
+    setShowChatSheet(true);
+  };
+
   const handlePhotoCapture = async (file: File) => {
     setIsAnalyzingPhoto(true);
     try {
@@ -334,6 +342,7 @@ export function App() {
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
     setMessages((prev) => [...prev, userMsg]);
+    setIsChatSending(true);
 
     try {
       const responseText = await getAIResponse(userMsg.text);
@@ -341,7 +350,9 @@ export function App() {
       const AIMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "bot",
-        text: isJson ? "I've detected some food items from your message. Review them below!" : (responseText || "I'm not exactly sure how to help with that."),
+        text: isJson
+          ? "I've detected some food items from your message. Review them below!"
+          : `⚠️ ${responseText || "I'm not exactly sure how to help with that."}`,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, AIMsg]);
@@ -366,6 +377,14 @@ export function App() {
       }
     } catch (error) {
       console.error("AI Error:", error);
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 2).toString(),
+        role: "bot",
+        text: "⚠️ Something went wrong reaching the nutrition assistant. Please try again.",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }]);
+    } finally {
+      setIsChatSending(false);
     }
   };
 
@@ -467,8 +486,17 @@ export function App() {
         isOpen={showLogSheet}
         onClose={() => setShowLogSheet(false)}
         onManual={handleManualEntry}
+        onChat={handleOpenChat}
         onImageSelected={handlePhotoCapture}
         isProcessing={isAnalyzingPhoto}
+      />
+
+      <ChatLogSheet
+        isOpen={showChatSheet}
+        onClose={() => setShowChatSheet(false)}
+        messages={messages}
+        onSend={handleSendMessage}
+        isSending={isChatSending}
       />
 
       {showDetectionModal && (

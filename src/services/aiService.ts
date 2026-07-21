@@ -22,6 +22,24 @@ const FOOD_RESPONSE_SCHEMA = {
 
 const VALID_CATEGORIES = ["Breakfast", "Lunch", "Dinner", "Snack"] as const;
 
+/** Turns a Gemini SDK error into a short, user-facing message instead of a generic fallback. */
+function describeGeminiError(error: unknown): string {
+  const status = (error as { status?: number } | null)?.status;
+
+  if (status === 503) return "The nutrition AI is experiencing high demand right now. Please try again in a moment.";
+  if (status === 429) return "The nutrition AI is rate-limited right now. Please wait a moment and try again.";
+  if (status === 401 || status === 403) return "The nutrition AI couldn't authenticate. Please check the app's configuration.";
+
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  try {
+    const apiMessage = JSON.parse(rawMessage)?.error?.message;
+    if (apiMessage) return apiMessage;
+  } catch {
+    // rawMessage wasn't JSON — fall through to the generic message below.
+  }
+  return "Something went wrong talking to the nutrition assistant. Please try again.";
+}
+
 /** Coerces whatever category string the model returns into one of the app's fixed categories, defaulting to "Snack". */
 export function normalizeCategory(category: unknown): "Breakfast" | "Lunch" | "Dinner" | "Snack" {
   const match = VALID_CATEGORIES.find((c) => c.toLowerCase() === String(category).trim().toLowerCase());
@@ -46,7 +64,7 @@ Respond with a JSON array of food items in the format: [{ "name": "Food Name", "
     return response.text;
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "Error communicating with AI Assistant.";
+    return describeGeminiError(error);
   }
 }
 

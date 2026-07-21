@@ -4,11 +4,12 @@ interface LogFoodSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onManual: () => void;
+  onChat: () => void;
   onImageSelected: (file: File) => void;
   isProcessing?: boolean;
 }
 
-export function LogFoodSheet({ isOpen, onClose, onManual, onImageSelected, isProcessing = false }: LogFoodSheetProps) {
+export function LogFoodSheet({ isOpen, onClose, onManual, onChat, onImageSelected, isProcessing = false }: LogFoodSheetProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const firstActionRef = useRef<HTMLButtonElement>(null);
@@ -87,6 +88,15 @@ export function LogFoodSheet({ isOpen, onClose, onManual, onImageSelected, isPro
         >
           <span className="material-symbols-outlined text-2xl text-secondary">edit_note</span>
           <span className="font-headline font-bold text-sm text-on-surface">Fill Manually</span>
+        </button>
+
+        <button
+          onClick={onChat}
+          disabled={isProcessing}
+          className="w-full mt-4 flex items-center justify-center gap-3 p-5 rounded-[2rem] bg-surface-container-low border border-outline hover:border-outline-variant hover:bg-surface-container-high transition-all active:scale-95 disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-2xl text-on-surface">chat</span>
+          <span className="font-headline font-bold text-sm text-on-surface">Chat</span>
         </button>
 
         <button

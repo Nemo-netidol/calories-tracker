@@ -337,7 +337,7 @@ export function Dashboard({
                 <span className="font-label text-xs font-bold text-on-surface">
                   {loggingState === 'error-1' ? 'Failed — Retry' : '1 Scoop'}
                 </span>
-                <span className="text-caption text-on-surface-variant font-medium mt-1">25g P • 130 kcal</span>
+                <span className="text-caption text-on-surface-variant font-medium mt-1">25g P • 150 kcal</span>
               </button>
 
               <button
@@ -357,7 +357,7 @@ export function Dashboard({
                 <span className="font-label text-xs font-bold text-on-surface">
                   {loggingState === 'error-1.5' ? 'Failed — Retry' : '1.5 Scoops'}
                 </span>
-                <span className="text-caption text-on-surface-variant font-medium mt-1">38g P • 195 kcal</span>
+                <span className="text-caption text-on-surface-variant font-medium mt-1">38g P • 225 kcal</span>
               </button>
             </div>
           </div>
